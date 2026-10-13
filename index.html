@@ -3,131 +3,813 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>전역 전에 해낼 일들</title>
+<title>나의 기록</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#EEF0E8; --ink:#1B2118; --olive:#4B5535; --sand:#D9D2B8; --signal:#E0572B;
-    --head:"Black Han Sans","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-    --body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    --bg:#fff; --ink:#1a1a1a; --line:#e6e6e6; --mute:#8a8a8a; --soft:#f5f6f8; --accent:#3b6cf6;
+    --font:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   }
   *{box-sizing:border-box;margin:0}
-  body{background:var(--paper);color:var(--ink);font-family:var(--body);line-height:1.7;font-size:17px}
-  main{max-width:640px;margin:0 auto;padding:48px 22px 80px}
-  .name{color:var(--olive);font-weight:700}
-  .hero{padding:28px 0 36px;border-bottom:3px solid var(--ink)}
-  .dday{font-family:var(--head);font-size:clamp(88px,26vw,168px);line-height:1;color:var(--signal);margin:6px 0 4px}
-  .sub{font-size:18px}
-  h2{font-family:var(--head);font-weight:400;font-size:28px;margin:44px 0 14px;color:var(--olive)}
-  ul{list-style:none;padding:0}
-  li{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--sand);align-items:baseline}
-  .mark{flex:none;width:22px;height:22px;border:2px solid var(--olive);border-radius:4px;position:relative;top:4px}
-  li.done .mark{background:var(--olive)}
-  li.done .mark::after{content:"";position:absolute;left:6px;top:1px;width:5px;height:11px;border:solid var(--paper);border-width:0 2px 2px 0;transform:rotate(45deg)}
-  li.done .text{color:#6b7260;text-decoration:line-through}
-  .note{display:block;font-size:14px;color:#6b7260}
-  footer{margin-top:56px;font-size:14px;color:#6b7260}
-  a{color:var(--olive)}
-  :focus-visible{outline:3px solid var(--signal);outline-offset:3px}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.7;font-size:16px}
+  a{color:inherit}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+
+  /* 홈: 검색창만 */
+  .home{min-height:calc(100vh - 60px);display:flex;flex-direction:column;align-items:center;padding:0 18px}
+  .home-box{width:100%;max-width:560px;margin-top:20vh}
+  .search{width:100%;font:inherit;font-size:18px;padding:16px 24px;border:1px solid var(--line);border-radius:999px;
+    box-shadow:0 2px 12px rgba(0,0,0,.05);background:#fff;color:var(--ink)}
+  .search:focus{outline:none;border-color:var(--ink)}
+  .results{margin-top:14px}
+  .result{display:block;text-decoration:none;padding:12px 18px;border-radius:12px}
+  .result:hover,.result:focus-visible,.result.first{background:var(--soft)}
+  .result b{font-weight:500}
+  .tag{font-size:13px;color:var(--mute);margin-left:8px}
+  .snip{display:block;font-size:14px;color:var(--mute)}
+  .none{padding:12px 18px;color:var(--mute)}
+
+  /* 맨 위 목록창 (모든 페이지에서 계속 보여요) */
+  .bar-top{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);z-index:10}
+  .bar-in{max-width:720px;margin:0 auto;padding:8px 14px;display:flex;gap:4px;align-items:center;overflow-x:auto}
+  .home-link,.cat{flex:none;font:inherit;font-weight:500;color:var(--mute);background:none;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;text-decoration:none}
+  .home-link{color:var(--ink);font-weight:700;margin-right:6px}
+  .cat.here{color:var(--ink);font-weight:700}
+  .cat.open{background:var(--soft);color:var(--ink)}
+  .panel{position:absolute;left:0;right:0;top:100%;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 8px 20px rgba(0,0,0,.06)}
+  .panel[hidden]{display:none}
+  .panel-list{max-width:720px;margin:0 auto;padding:6px 14px 12px;display:flex;flex-direction:column}
+  .p-item{text-decoration:none;padding:10px 12px;border-radius:8px}
+  .p-item:hover,.p-item:focus-visible{background:var(--soft)}
+  .p-item.on{font-weight:700;color:var(--accent)}
+  main{max-width:720px;margin:0 auto;padding:22px 18px 60px}
+
+  h2{font-size:26px;font-weight:700;margin-bottom:10px}
+  h3{font-size:16px;font-weight:700;margin:26px 0 8px}
+  .muted{color:var(--mute);font-size:14px}
+  .empty{background:var(--soft);padding:18px;border-radius:12px;color:var(--mute)}
+
+  .progress{height:10px;background:var(--soft);border-radius:99px;overflow:hidden}
+  .fill{height:100%;background:var(--accent);border-radius:99px}
+  .row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin:6px 0}
+
+  .dolli-wrap{position:relative;padding-top:54px;margin:14px 0 8px}
+  .dolli-icon{position:absolute;top:0;width:48px;transform:translateX(-50%)}
+  .big{font-size:clamp(56px,16vw,96px);font-weight:700;line-height:1.1}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px}
+  .stat{background:var(--soft);border-radius:12px;padding:10px 14px}
+  .stat b{display:block;font-size:20px}
+
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .cal-head button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:4px 14px;font:inherit;cursor:pointer}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+  .cal .dow{font-size:13px;color:var(--mute);padding:4px 0}
+  .cal .day{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:15px}
+  .cal .day.leave{background:var(--accent);color:#fff;font-weight:700}
+  .cal .day.today{outline:2px solid var(--ink);outline-offset:-2px;font-weight:700}
+  .leave-item{padding:10px 0;border-bottom:1px solid var(--line)}
+
+  ul.tasks{list-style:none;padding:0;margin-top:8px}
+  ul.tasks li{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);align-items:baseline}
+  .mark{flex:none;width:20px;height:20px;border:2px solid var(--mute);border-radius:5px;position:relative;top:4px}
+  li.done .mark{background:var(--ink);border-color:var(--ink)}
+  li.done .mark::after{content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  li.done .t{color:var(--mute);text-decoration:line-through}
+  .dtag{display:inline-block;background:var(--accent);color:#fff;font-weight:700;border-radius:6px;padding:1px 10px;margin-right:8px}
+
+  /* 편집 기능 */
+  .fab{position:fixed;right:16px;bottom:16px;width:54px;height:54px;border-radius:50%;border:0;background:var(--ink);color:#fff;font-size:22px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.22);z-index:20}
+  .fab.on{background:var(--accent)}
+  .banner{background:var(--soft);border-radius:12px;padding:10px 14px;margin-bottom:18px;font-size:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .btn{font:inherit;font-size:14px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:6px 12px;border-radius:8px;cursor:pointer}
+  .btn.danger{color:#c0392b}
+  .btn.main{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .field{display:flex;flex-direction:column;gap:4px;margin:10px 0}
+  .field label{font-size:13px;color:var(--mute)}
+  .in{font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff;color:var(--ink)}
+  .in:focus{outline:none;border-color:var(--ink)}
+  .editbox{margin-top:26px;border:1px solid var(--line);border-radius:12px;padding:6px 16px 16px}
+  .editbox .note{font-size:13px;color:var(--mute);margin-top:12px}
+  .leave-edit{border-bottom:1px solid var(--line);padding:6px 0 12px}
+  .leave-edit .btn{margin-top:4px}
+  .taskrow{display:flex;gap:8px;align-items:center;padding:5px 0}
+  .taskrow input[type=checkbox]{width:22px;height:22px;flex:none}
+  .p-tools{display:flex;gap:8px;flex-wrap:wrap;padding:10px 14px 12px;max-width:720px;margin:0 auto;border-top:1px solid var(--line)}
+  ul.tasks li.click{cursor:pointer}
+
+  footer{max-width:720px;margin:0 auto;padding:0 18px 50px;font-size:14px;color:var(--mute)}
 </style>
 </head>
 <body>
-<main>
 
-  <header class="hero">
-    <p><span class="name" id="myName"></span>의 전역 카운트다운</p>
-    <div class="dday" id="dday">D-0</div>
-    <p class="sub" id="sub"></p>
-  </header>
+<div id="app"></div>
 
-  <section>
-    <h2>나는 이런 사람이에요</h2>
-    <p id="intro"></p>
-  </section>
-
-  <section>
-    <h2>전역 전에 해낼 일들</h2>
-    <ul id="goals"></ul>
-  </section>
-
-  <footer>
-    <p id="contact"></p>
-  </footer>
-
-</main>
-
+<script src="data.js"></script>
 <script>
-  /* ============================================================
-     여기만 고치면 돼요. 따옴표(" ") 안의 글자만 바꾸세요.
-     ============================================================ */
+/* ================================================================
+   이 파일(index.html)은 디자인과 기능이에요. 내용은 data.js에서 고치세요.
+   ================================================================ */
 
-  const 이름 = "엄현우";
-  const 전역일 = "2027-09-29";   // 연-월-일 (형식 유지)
+if (typeof 내정보 === "undefined" || typeof 휴가 === "undefined" || typeof 목표 === "undefined" ||
+    typeof 공부 === "undefined" || typeof 기타 === "undefined") {
+  document.getElementById("app").textContent =
+    "data.js 파일을 불러오지 못했어요. index.html과 같은 위치에 data.js가 있는지 확인해 주세요.";
+  throw new Error("data.js 없음");
+}
 
-  const 소개 = "여기에 나를 소개하는 글을 적어요. 어떤 사람인지, 요즘 뭘 하고 있는지 편하게 써보세요.";
+/* ---------- 도구 ---------- */
+function h(tag, cls, text){
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+function 날짜(s){ const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); }
+function 날짜문자(d){ return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+const 오늘 = (() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); })();
+function 일수차(a, b){ return Math.round((a - b) / 86400000); }
+function dday(s){
+  const d = 일수차(날짜(s), 오늘);
+  return d > 0 ? "D-" + d : d === 0 ? "D-DAY" : "D+" + (-d);
+}
+function 진행률(할일){
+  if (!할일 || !할일.length) return null;
+  return Math.round(할일.filter(t => t.완료).length / 할일.length * 100);
+}
+function 바(퍼센트){
+  const w = h("div", "progress");
+  w.setAttribute("role", "progressbar");
+  w.setAttribute("aria-valuenow", String(Math.round(퍼센트)));
+  const f = h("div", "fill");
+  f.style.width = 퍼센트 + "%";
+  w.appendChild(f);
+  return w;
+}
 
-  // done: true 면 완료(체크+취소선), false 면 아직 안 한 일
-  // memo 는 작은 글씨 설명이에요. 필요 없으면 지워도 돼요.
-  const 해낼일 = [
-    { text: "나만의 인터넷 사이트 만들기", done: true,  memo: "첫 시작!" },
-    { text: "제 81차 한국사능력검정시험 1급 취득",       done: false, memo: "" },
-    { text: "ㅇ",       done: false, memo: "" },
-    { text: "ㅇ",       done: false, memo: "" }
-  ];
+/* ---------- 저장 (이 기기의 브라우저에 저장돼요) ---------- */
+const 저장키 = "my-record-site-v1";
+const 편집키 = "my-record-site-edit";
 
-  const 연락처 = "010-5093-4233";
+function 복사(o){ return JSON.parse(JSON.stringify(o)); }
 
-  /* ============================================================
-     아래는 건드리지 않아도 돼요.
-     ============================================================ */
+function 기본값(){
+  return {
+    내정보: 복사(내정보),
+    휴가: 복사(휴가),
+    분류: [
+      { id: "goals", 이름: "목표", 항목: 복사(목표) },
+      { id: "study", 이름: "공부", 항목: 복사(공부) },
+      { id: "etc",   이름: "기타", 항목: 복사(기타) }
+    ]
+  };
+}
+function 정리(o){
+  o.내정보 = Object.assign({ 이름: "", 입대일: "", 전역일: "", 연락처: "" }, o.내정보);
+  o.휴가 = o.휴가.filter(v => v && v.시작).map(v => ({ 시작: v.시작, 끝: v.끝 || v.시작, 메모: v.메모 || "" }));
+  o.분류 = o.분류.map(c => ({
+    id: String(c.id || ("c" + Math.random().toString(36).slice(2, 8))),
+    이름: String(c.이름 || "이름 없음"),
+    항목: (Array.isArray(c.항목) ? c.항목 : []).map(it => ({
+      제목: String(it.제목 || "제목 없음"),
+      설명: it.설명 || "",
+      날짜이름: it.날짜이름 || "",
+      날짜: it.날짜 || "",
+      할일: (Array.isArray(it.할일) ? it.할일 : []).map(t => ({ 글: String(t.글 || ""), 완료: !!t.완료 }))
+    }))
+  }));
+  return o;
+}
+function 올바른가(o){ return o && o.내정보 && Array.isArray(o.휴가) && Array.isArray(o.분류); }
+function 불러오기(){
+  try {
+    const raw = localStorage.getItem(저장키);
+    if (raw){ const o = JSON.parse(raw); if (올바른가(o)) return o; }
+  } catch (e) {}
+  return 기본값();
+}
 
-  document.getElementById("myName").textContent = 이름;
-  document.getElementById("intro").textContent = 소개;
-  document.getElementById("contact").textContent = 연락처;
+let 상태 = 정리(불러오기());
+let 편집중 = false;
+try { 편집중 = localStorage.getItem(편집키) === "1"; } catch (e) {}
+let 저장경고함 = false;
 
-  // D-day 계산 (오늘 0시 ~ 전역일 0시)
-  const [y, m, d] = 전역일.split("-").map(Number);
-  const target = new Date(y, m - 1, d);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diff = Math.round((target - today) / 86400000);
+function 저장(){
+  try { localStorage.setItem(저장키, JSON.stringify(상태)); }
+  catch (e) {
+    if (!저장경고함){
+      저장경고함 = true;
+      alert("이 브라우저에서는 저장이 안 돼요. 사생활 보호(시크릿) 모드라면 일반 창에서 열어 주세요.");
+    }
+  }
+}
 
-  const ddayEl = document.getElementById("dday");
-  const subEl = document.getElementById("sub");
-  if (diff > 0) {
-    ddayEl.textContent = "D-" + diff;
-    subEl.textContent = `${y}년 ${m}월 ${d}일 전역까지 ${diff}일 남았어요.`;
-  } else if (diff === 0) {
-    ddayEl.textContent = "D-DAY";
-    subEl.textContent = "오늘이 전역일이에요. 수고했어요!";
-  } else {
-    ddayEl.textContent = "전역!";
-    subEl.textContent = `전역한 지 ${-diff}일째예요.`;
+function 복무정보(){
+  const 정보 = 상태.내정보;
+  if (!정보.입대일 || !정보.전역일) return null;
+  const s = 날짜(정보.입대일), e = 날짜(정보.전역일);
+  const total = 일수차(e, s);
+  if (total <= 0) return null;
+  const done = 일수차(오늘, s);
+  return {
+    total,
+    done: Math.min(total, Math.max(0, done)),
+    left: Math.max(0, 일수차(e, 오늘)),
+    pct: Math.min(100, Math.max(0, done / total * 100))
+  };
+}
+
+/* ---------- 현재 화면 상태 / 이동 ---------- */
+let 현재키 = null, 현재번호 = -1, 현재뷰 = null, 현재그리기 = null;
+
+function 화면다시(){
+  if (현재뷰 && 현재그리기){ 현재뷰.innerHTML = ""; 현재그리기(현재뷰); }
+}
+function 가기(링크){
+  const 목표해시 = 링크 === "#" ? "" : 링크;
+  if (location.hash === 목표해시 || (!location.hash && 목표해시 === "")) 이동();
+  else location.hash = 링크;
+}
+
+/* ---------- 편집용 입력칸 ---------- */
+function 글칸(라벨, 값, 입력, 변경, 여러줄, 힌트){
+  const f = h("div", "field");
+  const l = h("label", "", 라벨);
+  const inp = h(여러줄 ? "textarea" : "input", "in");
+  if (여러줄) inp.rows = 2; else inp.type = "text";
+  inp.value = 값 || "";
+  if (힌트) inp.placeholder = 힌트;
+  inp.setAttribute("aria-label", 라벨);
+  inp.addEventListener("input", () => 입력(inp.value));
+  if (변경) inp.addEventListener("change", () => 변경(inp));
+  f.append(l, inp);
+  return f;
+}
+function 날짜칸(라벨, 값, 변경){
+  const f = h("div", "field");
+  const l = h("label", "", 라벨);
+  const inp = h("input", "in");
+  inp.type = "date";
+  inp.value = 값 || "";
+  inp.setAttribute("aria-label", 라벨);
+  inp.addEventListener("change", () => 변경(inp.value));
+  f.append(l, inp);
+  return f;
+}
+function 버튼(글, 종류, 누르면){
+  const b = h("button", "btn" + (종류 ? " " + 종류 : ""), 글);
+  b.type = "button";
+  b.addEventListener("click", 누르면);
+  return b;
+}
+
+/* ---------- 화면: 군돌이 ---------- */
+function 날짜설정상자(){
+  const box = h("div", "editbox");
+  box.appendChild(h("h3", "", "날짜 설정"));
+  box.appendChild(날짜칸("입대일", 상태.내정보.입대일, v => { 상태.내정보.입대일 = v; 저장(); 화면다시(); }));
+  box.appendChild(날짜칸("전역일", 상태.내정보.전역일, v => { if (v){ 상태.내정보.전역일 = v; 저장(); 화면다시(); } }));
+  return box;
+}
+
+function 군돌이(box){
+  box.appendChild(h("h2", "", "군돌이"));
+  const info = 복무정보();
+  if (!info){
+    const 글 = 상태.내정보.입대일
+      ? "입대일과 전역일을 확인해 주세요. 입대일이 전역일보다 앞이어야 해요."
+      : (편집중 ? "입대일을 아래에 입력하면 군생활 진행률이 보여요." : "입대일이 아직 없어요. 오른쪽 아래 ✎ 버튼을 눌러 입력할 수 있어요.");
+    box.appendChild(h("div", "empty", 글));
+    if (편집중) box.appendChild(날짜설정상자());
+    return;
+  }
+  box.appendChild(h("div", "big", info.pct.toFixed(1) + "%"));
+  const wrap = h("div", "dolli-wrap");
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 48 48");
+  icon.setAttribute("class", "dolli-icon");
+  icon.setAttribute("aria-hidden", "true");
+  icon.innerHTML =
+    '<circle cx="24" cy="28" r="14" fill="#f5f6f8" stroke="#1a1a1a" stroke-width="2"/>' +
+    '<path d="M8 26 C8 10 40 10 40 26 Z" fill="#3b6cf6" stroke="#1a1a1a" stroke-width="2"/>' +
+    '<circle cx="18" cy="31" r="2" fill="#1a1a1a"/><circle cx="30" cy="31" r="2" fill="#1a1a1a"/>' +
+    '<path d="M19 37 Q24 41 29 37" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>';
+  icon.style.left = Math.min(96, Math.max(4, info.pct)) + "%";
+  wrap.append(icon, 바(info.pct));
+  box.appendChild(wrap);
+
+  const stats = h("div", "stats");
+  [["복무", info.done + "일째"], ["남은 날", info.left + "일"], ["전체", info.total + "일"]].forEach(([k, v]) => {
+    const s = h("div", "stat");
+    s.append(h("span", "muted", k), h("b", "", v));
+    stats.appendChild(s);
+  });
+  box.appendChild(stats);
+  if (편집중) box.appendChild(날짜설정상자());
+}
+
+/* ---------- 화면: 휴가 달력 ---------- */
+let 보는달 = new Date(오늘.getFullYear(), 오늘.getMonth(), 1);
+
+function 휴가달력(box){
+  box.innerHTML = "";
+  box.appendChild(h("h2", "", "휴가 달력"));
+  const 휴가들 = 상태.휴가;
+
+  const 다음 = 휴가들
+    .filter(v => 일수차(날짜(v.끝), 오늘) >= 0)
+    .sort((a, b) => 날짜(a.시작) - 날짜(b.시작))[0];
+  if (다음){
+    const until = 일수차(날짜(다음.시작), 오늘);
+    box.appendChild(h("p", "", until > 0 ? `다음 휴가까지 ${until}일 남았어요.` : "지금 휴가 중이에요!"));
   }
 
-  // 해낼 일 목록 그리기
-  const ul = document.getElementById("goals");
-  해낼일.forEach(g => {
-    const li = document.createElement("li");
-    if (g.done) li.className = "done";
-    const mark = document.createElement("span");
-    mark.className = "mark";
-    const box = document.createElement("span");
-    const t = document.createElement("span");
-    t.className = "text";
-    t.textContent = g.text;
-    box.appendChild(t);
-    if (g.memo) {
-      const n = document.createElement("span");
-      n.className = "note";
-      n.textContent = g.memo;
-      box.appendChild(n);
+  const head = h("div", "cal-head");
+  const prev = h("button", "", "◀");
+  const next = h("button", "", "▶");
+  prev.type = next.type = "button";
+  prev.setAttribute("aria-label", "이전 달");
+  next.setAttribute("aria-label", "다음 달");
+  prev.addEventListener("click", () => { 보는달 = new Date(보는달.getFullYear(), 보는달.getMonth() - 1, 1); 휴가달력(box); });
+  next.addEventListener("click", () => { 보는달 = new Date(보는달.getFullYear(), 보는달.getMonth() + 1, 1); 휴가달력(box); });
+  head.append(prev, h("b", "", `${보는달.getFullYear()}년 ${보는달.getMonth() + 1}월`), next);
+  box.appendChild(head);
+
+  const cal = h("div", "cal");
+  ["일","월","화","수","목","금","토"].forEach(x => cal.appendChild(h("div", "dow", x)));
+  const first = new Date(보는달.getFullYear(), 보는달.getMonth(), 1).getDay();
+  const last = new Date(보는달.getFullYear(), 보는달.getMonth() + 1, 0).getDate();
+  for (let i = 0; i < first; i++) cal.appendChild(h("div"));
+  for (let day = 1; day <= last; day++){
+    const date = new Date(보는달.getFullYear(), 보는달.getMonth(), day);
+    const cell = h("div", "day", String(day));
+    if (휴가들.some(v => date >= 날짜(v.시작) && date <= 날짜(v.끝))) cell.classList.add("leave");
+    if (일수차(date, 오늘) === 0) cell.classList.add("today");
+    cal.appendChild(cell);
+  }
+  box.appendChild(cal);
+
+  const 순서 = 휴가들.map((v, i) => i).sort((a, b) => 날짜(휴가들[a].시작) - 날짜(휴가들[b].시작));
+
+  if (!편집중){
+    box.appendChild(h("h3", "", "휴가 목록"));
+    if (!휴가들.length){
+      box.appendChild(h("div", "empty", "아직 등록된 휴가가 없어요. 오른쪽 아래 ✎ 버튼을 눌러 추가할 수 있어요."));
+    } else {
+      순서.forEach(i => {
+        const v = 휴가들[i];
+        const r = h("div", "leave-item");
+        r.append(h("b", "", v.시작 === v.끝 ? v.시작 : `${v.시작} ~ ${v.끝}`));
+        if (v.메모) r.append(h("div", "muted", v.메모));
+        box.appendChild(r);
+      });
     }
-    li.append(mark, box);
-    ul.appendChild(li);
+    return;
+  }
+
+  const eb = h("div", "editbox");
+  eb.appendChild(h("h3", "", "휴가 편집"));
+  순서.forEach(i => {
+    const v = 휴가들[i];
+    const row = h("div", "leave-edit");
+    row.append(
+      날짜칸("시작", v.시작, val => { if (!val) return; v.시작 = val; if (날짜(v.끝) < 날짜(val)) v.끝 = val; 저장(); 화면다시(); }),
+      날짜칸("끝", v.끝, val => { if (!val) return; v.끝 = val; if (날짜(val) < 날짜(v.시작)) v.시작 = val; 저장(); 화면다시(); }),
+      글칸("메모", v.메모, val => { v.메모 = val; 저장(); }, null, false, "예: 가족 여행"),
+      버튼("이 휴가 삭제", "danger", () => { 휴가들.splice(i, 1); 저장(); 화면다시(); })
+    );
+    eb.appendChild(row);
   });
+  if (!휴가들.length) eb.appendChild(h("p", "muted", "아직 휴가가 없어요."));
+  const 추가 = h("div", "btnrow");
+  추가.appendChild(버튼("+ 휴가 추가", "main", () => {
+    const t = 날짜문자(오늘);
+    휴가들.push({ 시작: t, 끝: t, 메모: "" });
+    저장(); 화면다시();
+  }));
+  eb.appendChild(추가);
+  box.appendChild(eb);
+}
+
+/* ---------- 화면: 항목(목표/공부/기타 등) ---------- */
+function 항목화면(c, idx){
+  return function(box){
+    const it = c.항목[idx];
+    if (!it) return;
+    if (편집중){ 항목편집(box, c, idx); return; }
+
+    box.appendChild(h("h2", "", it.제목));
+    if (it.설명) box.appendChild(h("p", "", it.설명));
+    if (it.날짜){
+      const p = h("p");
+      p.style.marginTop = "10px";
+      p.append(h("span", "dtag", dday(it.날짜)), `${it.날짜이름 || "목표일"} ${it.날짜}`);
+      box.appendChild(p);
+    }
+    const pct = 진행률(it.할일);
+    if (pct === null){
+      box.appendChild(h("div", "empty", "할 일이 아직 없어요. 오른쪽 아래 ✎ 버튼을 눌러 추가할 수 있어요."));
+      return;
+    }
+    box.appendChild(h("h3", "", "진행률"));
+    const r = h("div", "row");
+    r.append(h("span", "", pct + "%"), h("span", "muted", `${it.할일.filter(t => t.완료).length} / ${it.할일.length} 완료`));
+    box.append(r, 바(pct));
+    const ul = h("ul", "tasks");
+    it.할일.forEach(t => {
+      const li = h("li", "click" + (t.완료 ? " done" : ""));
+      li.setAttribute("role", "checkbox");
+      li.setAttribute("aria-checked", String(t.완료));
+      li.tabIndex = 0;
+      li.append(h("span", "mark"), h("span", "t", t.글));
+      const 바꾸기 = () => { t.완료 = !t.완료; 저장(); 화면다시(); };
+      li.addEventListener("click", 바꾸기);
+      li.addEventListener("keydown", ev => { if (ev.key === " " || ev.key === "Enter"){ ev.preventDefault(); 바꾸기(); } });
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+  };
+}
+
+function 항목편집(box, c, idx){
+  const it = c.항목[idx];
+  box.appendChild(h("h2", "", "항목 편집"));
+  box.appendChild(글칸("제목", it.제목, v => { it.제목 = v; 저장(); }, inp => {
+    if (!inp.value.trim()){ inp.value = "제목 없음"; it.제목 = "제목 없음"; 저장(); }
+    헤더다시();
+  }));
+  box.appendChild(글칸("설명", it.설명, v => { it.설명 = v; 저장(); }, null, true));
+  box.appendChild(글칸("날짜 이름", it.날짜이름, v => { it.날짜이름 = v; 저장(); }, null, false, "예: 시험일"));
+  box.appendChild(날짜칸("날짜 (없으면 비워두세요)", it.날짜, v => { it.날짜 = v; 저장(); }));
+
+  box.appendChild(h("h3", "", "할 일"));
+  it.할일.forEach((t, i) => {
+    const row = h("div", "taskrow");
+    const cb = h("input");
+    cb.type = "checkbox";
+    cb.checked = t.완료;
+    cb.setAttribute("aria-label", "완료");
+    cb.addEventListener("change", () => { t.완료 = cb.checked; 저장(); });
+    const txt = h("input", "in");
+    txt.type = "text";
+    txt.value = t.글;
+    txt.setAttribute("aria-label", "할 일 내용");
+    txt.addEventListener("input", () => { t.글 = txt.value; 저장(); });
+    row.append(cb, txt, 버튼("삭제", "danger", () => { it.할일.splice(i, 1); 저장(); 화면다시(); }));
+    box.appendChild(row);
+  });
+
+  const 새줄 = h("div", "taskrow");
+  const 새칸 = h("input", "in");
+  새칸.type = "text";
+  새칸.placeholder = "새 할 일을 적고 추가를 누르세요";
+  새칸.setAttribute("aria-label", "새 할 일");
+  const 추가 = () => {
+    const 글 = 새칸.value.trim();
+    if (!글) return;
+    it.할일.push({ 글, 완료: false });
+    저장(); 화면다시();
+  };
+  새칸.addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); 추가(); } });
+  새줄.append(새칸, 버튼("추가", "main", 추가));
+  box.appendChild(새줄);
+
+  const 아래 = h("div", "btnrow");
+  아래.appendChild(버튼("이 항목 삭제", "danger", () => {
+    if (!confirm(`'${it.제목}' 항목을 삭제할까요?`)) return;
+    c.항목.splice(idx, 1);
+    저장();
+    가기("#" + c.id);
+  }));
+  box.appendChild(아래);
+}
+
+/* ---------- 메뉴 구성 ---------- */
+function 메뉴목록(){
+  const army = {
+    키: "army", 이름: "군생활",
+    하위: [
+      { 이름: "군돌이", 그리기: 군돌이, 글: ["군생활 진행률", "퍼센트", "전역", "남은 날", "디데이"] },
+      { 이름: "휴가 달력", 그리기: 휴가달력, 글: ["휴가", "외박", "달력", "일정"].concat(상태.휴가.map(v => v.메모 || "")) }
+    ]
+  };
+  const 나머지 = 상태.분류.map((c, ci) => ({
+    키: c.id, 이름: c.이름, 분류번호: ci,
+    하위: c.항목.map((it, i) => ({
+      이름: it.제목,
+      그리기: 항목화면(c, i),
+      글: [it.설명 || ""].concat(it.할일.map(t => t.글))
+    }))
+  }));
+  return [army].concat(나머지);
+}
+
+/* ---------- 목록 추가/수정/삭제 ---------- */
+function 새대목록(){
+  const 이름 = prompt("새 대목록 이름 (예: 운동, 독서)");
+  if (이름 === null) return;
+  const t = 이름.trim();
+  if (!t) return;
+  const id = "c" + Date.now().toString(36);
+  상태.분류.push({ id, 이름: t, 항목: [] });
+  저장();
+  가기("#" + id);
+}
+function 새항목(ci){
+  const c = 상태.분류[ci];
+  const 이름 = prompt("새 항목 이름 (예: 토익)");
+  if (이름 === null) return;
+  const t = 이름.trim();
+  if (!t) return;
+  c.항목.push({ 제목: t, 설명: "", 날짜이름: "", 날짜: "", 할일: [] });
+  저장();
+  가기("#" + c.id + "/" + (c.항목.length - 1));
+}
+function 대목록이름바꾸기(ci){
+  const c = 상태.분류[ci];
+  const 이름 = prompt("대목록 이름", c.이름);
+  if (이름 === null) return;
+  const t = 이름.trim();
+  if (!t) return;
+  c.이름 = t;
+  저장();
+  이동(true);
+}
+function 대목록삭제(ci){
+  const c = 상태.분류[ci];
+  if (!confirm(`'${c.이름}' 대목록과 안의 항목이 모두 삭제돼요. 삭제할까요?`)) return;
+  상태.분류.splice(ci, 1);
+  저장();
+  가기("#");
+}
+
+/* ---------- 검색 ---------- */
+function 정규화(s){ return String(s).toLowerCase().replace(/\s+/g, ""); }
+
+function 검색(질문){
+  const q = 정규화(질문);
+  if (!q) return [];
+  const 색인 = [];
+  메뉴목록().forEach(m => m.하위.forEach((s, i) => {
+    색인.push({ 제목: s.이름, 구분: m.이름, 링크: "#" + m.키 + "/" + i, 글: s.글 });
+  }));
+  return 색인.map(e => {
+    let score = 0, snip = "";
+    const t = 정규화(e.제목);
+    if (t === q) score = 100;
+    else if (t.startsWith(q)) score = 90;
+    else if (t.includes(q)) score = 80;
+    else if (정규화(e.구분).includes(q)) score = 50;
+    if (score < 80){
+      const hit = e.글.find(x => x && 정규화(x).includes(q));
+      if (hit){ score = Math.max(score, 60); snip = hit; }
+    }
+    return { e, score, snip };
+  }).filter(r => r.score > 0).sort((a, b) => b.score - a.score);
+}
+
+/* ---------- 백업 ---------- */
+function 백업저장(){
+  const blob = new Blob([JSON.stringify(상태, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "내사이트-백업-" + 날짜문자(오늘) + ".json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function 백업불러오기(파일){
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const o = JSON.parse(r.result);
+      if (!올바른가(o)) throw new Error("형식");
+      상태 = 정리(o);
+      저장();
+      이동(true);
+      alert("백업을 불러왔어요.");
+    } catch (e) {
+      alert("백업 파일 형식이 맞지 않아요.");
+    }
+  };
+  r.readAsText(파일);
+}
+function 처음으로(){
+  if (!confirm("이 기기에서 바꾼 내용이 모두 지워지고, 처음 상태(data.js)로 돌아가요. 계속할까요?")) return;
+  try { localStorage.removeItem(저장키); } catch (e) {}
+  상태 = 정리(기본값());
+  이동(true);
+}
+
+/* ---------- 홈: 검색창만 (편집 모드에서는 설정 상자가 추가로 보여요) ---------- */
+function 홈(app){
+  const home = h("div", "home");
+  const box = h("div", "home-box");
+  const input = h("input", "search");
+  input.type = "search";
+  input.placeholder = "찾을 내용을 입력하세요 (예: 한능검, 휴가)";
+  input.setAttribute("aria-label", "검색");
+  input.autocomplete = "off";
+  const out = h("div", "results");
+  out.setAttribute("aria-live", "polite");
+
+  function 그리기(){
+    out.innerHTML = "";
+    const q = input.value.trim();
+    if (!q) return;
+    const list = 검색(q);
+    if (!list.length){ out.appendChild(h("div", "none", "찾는 항목이 없어요.")); return; }
+    list.forEach((r, i) => {
+      const a = h("a", "result" + (i === 0 ? " first" : ""));
+      a.href = r.e.링크;
+      const b = h("b", "", r.e.제목);
+      b.appendChild(h("span", "tag", r.e.구분));
+      a.appendChild(b);
+      if (r.snip) a.appendChild(h("span", "snip", r.snip));
+      out.appendChild(a);
+    });
+  }
+  input.addEventListener("input", 그리기);
+  input.addEventListener("keydown", ev => {
+    if (ev.key === "Enter"){
+      const list = 검색(input.value.trim());
+      if (list.length) location.hash = list[0].e.링크;
+    }
+  });
+  box.append(input, out);
+
+  if (편집중){
+    const eb = h("div", "editbox");
+    eb.appendChild(h("h3", "", "설정"));
+    eb.appendChild(글칸("이름 (브라우저 탭 제목에 써요)", 상태.내정보.이름, v => { 상태.내정보.이름 = v; 저장(); }, () => { document.title = 상태.내정보.이름 + "의 기록"; }));
+    eb.appendChild(글칸("연락처 (각 페이지 맨 아래에 보여요)", 상태.내정보.연락처, v => { 상태.내정보.연락처 = v; 저장(); }));
+    const 파일 = h("input");
+    파일.type = "file";
+    파일.accept = ".json,application/json";
+    파일.style.display = "none";
+    파일.addEventListener("change", () => { if (파일.files && 파일.files[0]) 백업불러오기(파일.files[0]); });
+    const 줄 = h("div", "btnrow");
+    줄.append(
+      버튼("+ 대목록 추가", "main", 새대목록),
+      버튼("백업 저장", "", 백업저장),
+      버튼("백업 불러오기", "", () => 파일.click()),
+      버튼("처음 상태로", "danger", 처음으로),
+      파일
+    );
+    eb.appendChild(줄);
+    eb.appendChild(h("p", "note", "바꾼 내용은 이 기기·브라우저에만 저장돼요. 다른 기기에서 쓰려면 백업을 저장했다가 불러오세요. 방문자는 data.js의 기본 내용을 봐요."));
+    box.appendChild(eb);
+  }
+  home.appendChild(box);
+  app.appendChild(home);
+}
+
+/* ---------- 맨 위 목록창: 모든 페이지에 계속 보여요 ---------- */
+let 열린키 = null;
+let 목록닫기 = function(){};
+
+function 헤더(키, 번호){
+  const 목록 = 메뉴목록();
+  const top = h("header", "bar-top");
+  const inn = h("div", "bar-in");
+  const home = h("a", "home-link", "홈");
+  home.href = "#";
+  inn.appendChild(home);
+  const panel = h("div", "panel");
+  const buttons = [];
+
+  function 그리기(){
+    panel.innerHTML = "";
+    panel.hidden = !열린키;
+    buttons.forEach(b => {
+      const open = b.dataset.key === 열린키;
+      b.setAttribute("aria-expanded", String(open));
+      b.classList.toggle("open", open);
+    });
+    if (!열린키) return;
+    const m = 목록.find(x => x.키 === 열린키);
+    const list = h("div", "panel-list");
+    if (!m.하위.length) list.appendChild(h("div", "none", "아직 항목이 없어요."));
+    m.하위.forEach((s, i) => {
+      const a = h("a", "p-item" + (m.키 === 키 && i === 번호 ? " on" : ""), s.이름);
+      const link = "#" + m.키 + "/" + i;
+      a.href = link;
+      a.addEventListener("click", () => {
+        열린키 = null; 그리기();
+        if (location.hash === link) 이동();
+      });
+      list.appendChild(a);
+    });
+    panel.appendChild(list);
+    if (편집중 && m.분류번호 !== undefined){
+      const tools = h("div", "p-tools");
+      tools.append(
+        버튼("+ 새 항목", "main", () => 새항목(m.분류번호)),
+        버튼("이름 바꾸기", "", () => 대목록이름바꾸기(m.분류번호)),
+        버튼("대목록 삭제", "danger", () => 대목록삭제(m.분류번호))
+      );
+      panel.appendChild(tools);
+    }
+  }
+
+  목록.forEach(m => {
+    const b = h("button", "cat" + (m.키 === 키 ? " here" : ""), m.이름 + " ▾");
+    b.type = "button";
+    b.dataset.key = m.키;
+    b.setAttribute("aria-expanded", "false");
+    b.addEventListener("click", ev => {
+      ev.stopPropagation();
+      열린키 = (열린키 === m.키) ? null : m.키;
+      그리기();
+    });
+    buttons.push(b);
+    inn.appendChild(b);
+  });
+
+  top.append(inn, panel);
+  열린키 = null;
+  그리기();
+  목록닫기 = function(){ 열린키 = null; 그리기(); };
+  return top;
+}
+function 헤더다시(){
+  const app = document.getElementById("app");
+  if (app.firstChild) app.replaceChild(헤더(현재키, 현재번호), app.firstChild);
+}
+
+document.addEventListener("click", ev => {
+  if (열린키 && !ev.target.closest(".bar-top")) 목록닫기();
+});
+document.addEventListener("keydown", ev => {
+  if (ev.key === "Escape" && 열린키) 목록닫기();
+});
+
+/* ---------- 편집 버튼 / 안내 ---------- */
+function 플로팅(){
+  const b = h("button", "fab" + (편집중 ? " on" : ""), 편집중 ? "✓" : "✎");
+  b.type = "button";
+  b.title = 편집중 ? "편집 끝내기" : "편집 모드 켜기";
+  b.setAttribute("aria-label", b.title);
+  b.addEventListener("click", () => {
+    편집중 = !편집중;
+    try { localStorage.setItem(편집키, 편집중 ? "1" : "0"); } catch (e) {}
+    이동(true);
+  });
+  return b;
+}
+function 배너(){
+  const bn = h("div", "banner");
+  bn.appendChild(h("span", "", "편집 모드예요. 바꾼 내용은 이 기기·브라우저에만 저장돼요."));
+  bn.appendChild(버튼("+ 대목록 추가", "", 새대목록));
+  return bn;
+}
+
+/* ---------- 페이지 이동 ---------- */
+function 이동(스크롤유지){
+  const parts = location.hash.slice(1).split("/");
+  const 목록 = 메뉴목록();
+  const menu = 목록.find(m => m.키 === parts[0]);
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  document.title = 상태.내정보.이름 + "의 기록";
+
+  if (!menu){
+    현재키 = null; 현재번호 = -1; 현재뷰 = null; 현재그리기 = null;
+    app.appendChild(헤더(null, -1));
+    홈(app);
+    app.appendChild(플로팅());
+    return;
+  }
+  const idx = Math.max(0, Math.min(Number(parts[1]) || 0, menu.하위.length - 1));
+  현재키 = menu.키; 현재번호 = idx;
+  app.appendChild(헤더(menu.키, idx));
+
+  const main = h("main");
+  if (편집중) main.appendChild(배너());
+  if (menu.하위.length){
+    const view = h("div");
+    main.appendChild(view);
+    현재뷰 = view;
+    현재그리기 = menu.하위[idx].그리기;
+    현재그리기(view);
+  } else {
+    현재뷰 = null; 현재그리기 = null;
+    main.appendChild(h("div", "empty", "아직 항목이 없어요."));
+    if (편집중 && menu.분류번호 !== undefined){
+      const 줄 = h("div", "btnrow");
+      줄.appendChild(버튼("+ 새 항목", "main", () => 새항목(menu.분류번호)));
+      main.appendChild(줄);
+    }
+  }
+  app.append(main, h("footer", "", 상태.내정보.연락처), 플로팅());
+  if (!스크롤유지) window.scrollTo(0, 0);
+}
+
+window.addEventListener("hashchange", () => 이동());
+이동();
 </script>
 </body>
 </html>
