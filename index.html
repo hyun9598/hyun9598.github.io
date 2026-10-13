@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>전역 전에 해낼 일들</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF0E8; --ink:#1B2118; --olive:#4B5535; --sand:#D9D2B8; --signal:#E0572B;
+    --head:"Black Han Sans","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    --body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--body);line-height:1.7;font-size:17px}
+  main{max-width:640px;margin:0 auto;padding:48px 22px 80px}
+  .name{color:var(--olive);font-weight:700}
+  .hero{padding:28px 0 36px;border-bottom:3px solid var(--ink)}
+  .dday{font-family:var(--head);font-size:clamp(88px,26vw,168px);line-height:1;color:var(--signal);margin:6px 0 4px}
+  .sub{font-size:18px}
+  h2{font-family:var(--head);font-weight:400;font-size:28px;margin:44px 0 14px;color:var(--olive)}
+  ul{list-style:none;padding:0}
+  li{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--sand);align-items:baseline}
+  .mark{flex:none;width:22px;height:22px;border:2px solid var(--olive);border-radius:4px;position:relative;top:4px}
+  li.done .mark{background:var(--olive)}
+  li.done .mark::after{content:"";position:absolute;left:6px;top:1px;width:5px;height:11px;border:solid var(--paper);border-width:0 2px 2px 0;transform:rotate(45deg)}
+  li.done .text{color:#6b7260;text-decoration:line-through}
+  .note{display:block;font-size:14px;color:#6b7260}
+  footer{margin-top:56px;font-size:14px;color:#6b7260}
+  a{color:var(--olive)}
+  :focus-visible{outline:3px solid var(--signal);outline-offset:3px}
+</style>
+</head>
+<body>
+<main>
+
+  <header class="hero">
+    <p><span class="name" id="myName"></span>의 전역 카운트다운</p>
+    <div class="dday" id="dday">D-0</div>
+    <p class="sub" id="sub"></p>
+  </header>
+
+  <section>
+    <h2>나는 이런 사람이에요</h2>
+    <p id="intro"></p>
+  </section>
+
+  <section>
+    <h2>전역 전에 해낼 일들</h2>
+    <ul id="goals"></ul>
+  </section>
+
+  <footer>
+    <p id="contact"></p>
+  </footer>
+
+</main>
+
+<script>
+  /* ============================================================
+     여기만 고치면 돼요. 따옴표(" ") 안의 글자만 바꾸세요.
+     ============================================================ */
+
+  const 이름 = "여기에 이름이나 별명";
+  const 전역일 = "2027-09-29";   // 연-월-일 (형식 유지)
+
+  const 소개 = "여기에 나를 소개하는 글을 적어요. 어떤 사람인지, 요즘 뭘 하고 있는지 편하게 써보세요.";
+
+  // done: true 면 완료(체크+취소선), false 면 아직 안 한 일
+  // memo 는 작은 글씨 설명이에요. 필요 없으면 지워도 돼요.
+  const 해낼일 = [
+    { text: "나만의 인터넷 사이트 만들기", done: true,  memo: "첫 시작!" },
+    { text: "여기에 하고 싶은 일 1",       done: false, memo: "" },
+    { text: "여기에 하고 싶은 일 2",       done: false, memo: "" },
+    { text: "여기에 하고 싶은 일 3",       done: false, memo: "" }
+  ];
+
+  const 연락처 = "연락은 여기로: 이메일이나 인스타 아이디를 적어요";
+
+  /* ============================================================
+     아래는 건드리지 않아도 돼요.
+     ============================================================ */
+
+  document.getElementById("myName").textContent = 이름;
+  document.getElementById("intro").textContent = 소개;
+  document.getElementById("contact").textContent = 연락처;
+
+  // D-day 계산 (오늘 0시 ~ 전역일 0시)
+  const [y, m, d] = 전역일.split("-").map(Number);
+  const target = new Date(y, m - 1, d);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.round((target - today) / 86400000);
+
+  const ddayEl = document.getElementById("dday");
+  const subEl = document.getElementById("sub");
+  if (diff > 0) {
+    ddayEl.textContent = "D-" + diff;
+    subEl.textContent = `${y}년 ${m}월 ${d}일 전역까지 ${diff}일 남았어요.`;
+  } else if (diff === 0) {
+    ddayEl.textContent = "D-DAY";
+    subEl.textContent = "오늘이 전역일이에요. 수고했어요!";
+  } else {
+    ddayEl.textContent = "전역!";
+    subEl.textContent = `전역한 지 ${-diff}일째예요.`;
+  }
+
+  // 해낼 일 목록 그리기
+  const ul = document.getElementById("goals");
+  해낼일.forEach(g => {
+    const li = document.createElement("li");
+    if (g.done) li.className = "done";
+    const mark = document.createElement("span");
+    mark.className = "mark";
+    const box = document.createElement("span");
+    const t = document.createElement("span");
+    t.className = "text";
+    t.textContent = g.text;
+    box.appendChild(t);
+    if (g.memo) {
+      const n = document.createElement("span");
+      n.className = "note";
+      n.textContent = g.memo;
+      box.appendChild(n);
+    }
+    li.append(mark, box);
+    ul.appendChild(li);
+  });
+</script>
+</body>
+</html>
