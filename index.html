@@ -99,6 +99,11 @@
   .taskrow input[type=checkbox]{width:22px;height:22px;flex:none}
   .p-tools{display:flex;gap:8px;flex-wrap:wrap;padding:10px 14px 12px;max-width:720px;margin:0 auto;border-top:1px solid var(--line)}
   ul.tasks li.click{cursor:pointer}
+  .toast{position:fixed;left:16px;bottom:22px;background:var(--ink);color:#fff;padding:8px 14px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:calc(100vw - 100px)}
+  .toast.show{opacity:1}
+  .toast.err{background:#c0392b}
+  .loading{padding:40vh 18px 0;text-align:center;color:var(--mute)}
+  footer a{color:var(--mute)}
 
   footer{max-width:720px;margin:0 auto;padding:0 18px 50px;font-size:14px;color:var(--mute)}
 </style>
@@ -191,19 +196,157 @@ function 불러오기(){
   return 기본값();
 }
 
+/* ---------- 서버 저장 (GitHub 저장소의 data.json 파일에 저장돼요) ---------- */
+const 저장소 = { 소유자: "hyun9598", 이름: "hyun9598.github.io", 파일: "data.json" };
+const 저장소주소 = `https://api.github.com/repos/${저장소.소유자}/${저장소.이름}`;
+const 파일주소 = `${저장소주소}/contents/${저장소.파일}`;
+const 토큰키 = "my-record-site-token";
+
+function 토큰(){ try { return localStorage.getItem(토큰키) || ""; } catch (e) { return ""; } }
+function 편집가능(){ return !!토큰(); }
+
+let 캐시있음 = false;
+try { 캐시있음 = !!localStorage.getItem(저장키); } catch (e) {}
 let 상태 = 정리(불러오기());
 let 편집중 = false;
-try { 편집중 = localStorage.getItem(편집키) === "1"; } catch (e) {}
+try { 편집중 = 편집가능() && localStorage.getItem(편집키) === "1"; } catch (e) {}
+let 로딩중 = !캐시있음;
 let 저장경고함 = false;
+let 저장대기 = null, 저장중 = false, 다시저장 = false;
 
+let 토스트 = null, 토스트타이머 = null;
+function 알림(글, 종류){
+  if (!토스트){ 토스트 = h("div", "toast"); document.body.appendChild(토스트); }
+  토스트.textContent = 글;
+  토스트.className = "toast show" + (종류 ? " " + 종류 : "");
+  clearTimeout(토스트타이머);
+  if (종류 !== "err") 토스트타이머 = setTimeout(() => { 토스트.className = "toast"; }, 2500);
+}
+
+function 인코드(글){
+  const bytes = new TextEncoder().encode(글);
+  let bin = "";
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return btoa(bin);
+}
+function 오류글(코드){
+  if (코드 === 401) return "토큰이 만료됐거나 맞지 않아요";
+  if (코드 === 403 || 코드 === 404) return "이 저장소를 수정할 권한이 없어요";
+  if (코드 === 409 || 코드 === 422) return "다른 곳에서 먼저 바뀌었어요. 새로고침 후 다시 해 주세요";
+  return "오류 코드 " + 코드;
+}
+
+async function 서버읽기(){
+  const res = await fetch(파일주소, { headers: { Accept: "application/vnd.github.raw+json" }, cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("읽기 실패 " + res.status);
+  return JSON.parse(await res.text());
+}
+async function 서버읽기안전(){
+  try { return await 서버읽기(); }
+  catch (e) {
+    try {
+      const r = await fetch("data.json?t=" + Date.now(), { cache: "no-store" });
+      if (r.ok) return await r.json();
+      if (r.status === 404) return null;
+    } catch (e2) {}
+    throw e;
+  }
+}
+async function 서버쓰기(){
+  const t = 토큰();
+  if (!t) throw new Error("관리자 연결이 필요해요");
+  const H = { Authorization: "Bearer " + t, Accept: "application/vnd.github+json" };
+  let sha;
+  const g = await fetch(파일주소, { headers: H, cache: "no-store" });
+  if (g.ok) sha = (await g.json()).sha;
+  else if (g.status !== 404) throw new Error(오류글(g.status));
+  const body = { message: "사이트 내용 수정", content: 인코드(JSON.stringify(상태, null, 2)) };
+  if (sha) body.sha = sha;
+  const p = await fetch(파일주소, {
+    method: "PUT",
+    headers: Object.assign({ "Content-Type": "application/json" }, H),
+    body: JSON.stringify(body)
+  });
+  if (!p.ok) throw new Error(오류글(p.status));
+}
+async function 서버저장(){
+  if (저장중){ 다시저장 = true; return; }
+  저장중 = true;
+  알림("서버에 저장 중…");
+  try {
+    await 서버쓰기();
+    알림("서버에 저장됨");
+  } catch (e) {
+    const 글 = e instanceof TypeError ? "인터넷 연결을 확인해 주세요" : e.message;
+    알림("저장 실패: " + 글 + " (아무 항목이나 다시 수정하면 재시도해요)", "err");
+  }
+  저장중 = false;
+  if (다시저장){ 다시저장 = false; 서버저장(); }
+}
+
+/* 고칠 때마다 호출돼요: 이 기기에 임시 저장하고, 관리자면 서버에도 저장해요 */
 function 저장(){
   try { localStorage.setItem(저장키, JSON.stringify(상태)); }
   catch (e) {
     if (!저장경고함){
       저장경고함 = true;
-      alert("이 브라우저에서는 저장이 안 돼요. 사생활 보호(시크릿) 모드라면 일반 창에서 열어 주세요.");
+      alert("이 브라우저에서는 임시 저장이 안 돼요. 사생활 보호(시크릿) 모드라면 일반 창에서 열어 주세요.");
     }
   }
+  if (!편집가능()) return;
+  clearTimeout(저장대기);
+  저장대기 = setTimeout(() => { 저장대기 = null; 서버저장(); }, 900);
+}
+
+/* 사이트를 열 때 서버의 최신 내용을 가져와요 */
+async function 서버동기화(){
+  try {
+    const d = await 서버읽기안전();
+    if (d && 올바른가(d) && !저장대기 && !저장중){
+      const 새것 = 정리(d);
+      if (JSON.stringify(새것) !== JSON.stringify(상태)){
+        상태 = 새것;
+        try { localStorage.setItem(저장키, JSON.stringify(상태)); } catch (e) {}
+        로딩중 = false;
+        이동(true);
+        return;
+      }
+    }
+  } catch (e) {}
+  if (로딩중){ 로딩중 = false; 이동(true); }
+}
+
+/* 관리자 연결: GitHub 토큰을 이 기기에 저장해요 */
+async function 관리자연결(){
+  const 입력 = prompt("관리자 토큰을 붙여넣으세요.\n(GitHub에서 만든 Fine-grained token)");
+  if (입력 === null) return;
+  const t = 입력.trim();
+  if (!t) return;
+  try {
+    const r = await fetch(저장소주소, { headers: { Authorization: "Bearer " + t, Accept: "application/vnd.github+json" } });
+    if (!r.ok) throw new Error("확인 실패");
+    const info = await r.json();
+    if (info.permissions && info.permissions.push === false) throw new Error("권한 없음");
+  } catch (e) {
+    alert("토큰이 맞지 않거나 이 저장소를 수정할 권한이 없어요. 토큰 설정을 다시 확인해 주세요.");
+    return;
+  }
+  try { localStorage.setItem(토큰키, t); }
+  catch (e) { alert("이 브라우저에서는 연결 정보를 저장할 수 없어요."); return; }
+  try {
+    const d = await 서버읽기안전();
+    if (d === null) await 서버저장();
+    else if (올바른가(d)) { 상태 = 정리(d); try { localStorage.setItem(저장키, JSON.stringify(상태)); } catch (e) {} }
+  } catch (e) {}
+  alert("연결됐어요. 이제 오른쪽 아래 ✎ 버튼으로 수정할 수 있어요.");
+  이동(true);
+}
+function 연결해제(){
+  if (!confirm("이 기기의 관리자 연결을 해제할까요? (서버에 저장된 내용은 그대로예요)")) return;
+  try { localStorage.removeItem(토큰키); localStorage.setItem(편집키, "0"); } catch (e) {}
+  편집중 = false;
+  이동(true);
 }
 
 function 복무정보(){
@@ -280,7 +423,8 @@ function 군돌이(box){
   if (!info){
     const 글 = 상태.내정보.입대일
       ? "입대일과 전역일을 확인해 주세요. 입대일이 전역일보다 앞이어야 해요."
-      : (편집중 ? "입대일을 아래에 입력하면 군생활 진행률이 보여요." : "입대일이 아직 없어요. 오른쪽 아래 ✎ 버튼을 눌러 입력할 수 있어요.");
+      : (편집중 ? "입대일을 아래에 입력하면 군생활 진행률이 보여요."
+        : (편집가능() ? "입대일이 아직 없어요. 오른쪽 아래 ✎ 버튼을 눌러 입력할 수 있어요." : "아직 입대일이 입력되지 않았어요."));
     box.appendChild(h("div", "empty", 글));
     if (편집중) box.appendChild(날짜설정상자());
     return;
@@ -356,7 +500,7 @@ function 휴가달력(box){
   if (!편집중){
     box.appendChild(h("h3", "", "휴가 목록"));
     if (!휴가들.length){
-      box.appendChild(h("div", "empty", "아직 등록된 휴가가 없어요. 오른쪽 아래 ✎ 버튼을 눌러 추가할 수 있어요."));
+      box.appendChild(h("div", "empty", (편집가능() ? "아직 등록된 휴가가 없어요. 오른쪽 아래 ✎ 버튼을 눌러 추가할 수 있어요." : "아직 등록된 휴가가 없어요.")));
     } else {
       순서.forEach(i => {
         const v = 휴가들[i];
@@ -410,7 +554,7 @@ function 항목화면(c, idx){
     }
     const pct = 진행률(it.할일);
     if (pct === null){
-      box.appendChild(h("div", "empty", "할 일이 아직 없어요. 오른쪽 아래 ✎ 버튼을 눌러 추가할 수 있어요."));
+      box.appendChild(h("div", "empty", (편집가능() ? "할 일이 아직 없어요. 오른쪽 아래 ✎ 버튼을 눌러 추가할 수 있어요." : "할 일이 아직 없어요.")));
       return;
     }
     box.appendChild(h("h3", "", "진행률"));
@@ -419,14 +563,17 @@ function 항목화면(c, idx){
     box.append(r, 바(pct));
     const ul = h("ul", "tasks");
     it.할일.forEach(t => {
-      const li = h("li", "click" + (t.완료 ? " done" : ""));
-      li.setAttribute("role", "checkbox");
-      li.setAttribute("aria-checked", String(t.완료));
-      li.tabIndex = 0;
+      const 가능 = 편집가능();
+      const li = h("li", ((가능 ? "click" : "") + (t.완료 ? " done" : "")).trim());
       li.append(h("span", "mark"), h("span", "t", t.글));
-      const 바꾸기 = () => { t.완료 = !t.완료; 저장(); 화면다시(); };
-      li.addEventListener("click", 바꾸기);
-      li.addEventListener("keydown", ev => { if (ev.key === " " || ev.key === "Enter"){ ev.preventDefault(); 바꾸기(); } });
+      if (가능){
+        li.setAttribute("role", "checkbox");
+        li.setAttribute("aria-checked", String(t.완료));
+        li.tabIndex = 0;
+        const 바꾸기 = () => { t.완료 = !t.완료; 저장(); 화면다시(); };
+        li.addEventListener("click", 바꾸기);
+        li.addEventListener("keydown", ev => { if (ev.key === " " || ev.key === "Enter"){ ev.preventDefault(); 바꾸기(); } });
+      }
       ul.appendChild(li);
     });
     box.appendChild(ul);
@@ -598,9 +745,9 @@ function 백업불러오기(파일){
   r.readAsText(파일);
 }
 function 처음으로(){
-  if (!confirm("이 기기에서 바꾼 내용이 모두 지워지고, 처음 상태(data.js)로 돌아가요. 계속할까요?")) return;
-  try { localStorage.removeItem(저장키); } catch (e) {}
+  if (!confirm("서버에 저장된 내용을 포함해 모든 내용이 처음 상태(data.js)로 바뀌어요. 계속할까요?")) return;
   상태 = 정리(기본값());
+  저장();
   이동(true);
 }
 
@@ -657,10 +804,11 @@ function 홈(app){
       버튼("백업 저장", "", 백업저장),
       버튼("백업 불러오기", "", () => 파일.click()),
       버튼("처음 상태로", "danger", 처음으로),
+      버튼("서버 연결 해제", "", 연결해제),
       파일
     );
     eb.appendChild(줄);
-    eb.appendChild(h("p", "note", "바꾼 내용은 이 기기·브라우저에만 저장돼요. 다른 기기에서 쓰려면 백업을 저장했다가 불러오세요. 방문자는 data.js의 기본 내용을 봐요."));
+    eb.appendChild(h("p", "note", "바꾼 내용은 서버(GitHub)에 자동으로 저장돼서 누구나 볼 수 있어요. 백업은 파일로 따로 보관하고 싶을 때 쓰세요."));
     box.appendChild(eb);
   }
   home.appendChild(box);
@@ -760,9 +908,18 @@ function 플로팅(){
   });
   return b;
 }
+function 푸터(){
+  const f = h("footer", "", 상태.내정보.연락처);
+  if (!편집가능()){
+    const a = h("a", "admin", "관리자");
+    a.href = "#admin";
+    f.append(" · ", a);
+  }
+  return f;
+}
 function 배너(){
   const bn = h("div", "banner");
-  bn.appendChild(h("span", "", "편집 모드예요. 바꾼 내용은 이 기기·브라우저에만 저장돼요."));
+  bn.appendChild(h("span", "", "편집 모드예요. 바꾼 내용은 서버에 자동으로 저장돼요."));
   bn.appendChild(버튼("+ 대목록 추가", "", 새대목록));
   return bn;
 }
@@ -770,17 +927,19 @@ function 배너(){
 /* ---------- 페이지 이동 ---------- */
 function 이동(스크롤유지){
   const parts = location.hash.slice(1).split("/");
+  if (parts[0] === "admin"){ location.hash = "#"; setTimeout(관리자연결, 50); return; }
   const 목록 = 메뉴목록();
   const menu = 목록.find(m => m.키 === parts[0]);
   const app = document.getElementById("app");
   app.innerHTML = "";
   document.title = 상태.내정보.이름 + "의 기록";
+  if (로딩중){ app.appendChild(h("div", "loading", "불러오는 중…")); return; }
 
   if (!menu){
     현재키 = null; 현재번호 = -1; 현재뷰 = null; 현재그리기 = null;
     app.appendChild(헤더(null, -1));
     홈(app);
-    app.appendChild(플로팅());
+    if (편집가능()) app.appendChild(플로팅());
     return;
   }
   const idx = Math.max(0, Math.min(Number(parts[1]) || 0, menu.하위.length - 1));
@@ -804,12 +963,15 @@ function 이동(스크롤유지){
       main.appendChild(줄);
     }
   }
-  app.append(main, h("footer", "", 상태.내정보.연락처), 플로팅());
+  app.append(main, 푸터());
+  if (편집가능()) app.appendChild(플로팅());
   if (!스크롤유지) window.scrollTo(0, 0);
 }
 
 window.addEventListener("hashchange", () => 이동());
 이동();
+서버동기화();
+setTimeout(() => { if (로딩중){ 로딩중 = false; 이동(true); } }, 4000);
 </script>
 </body>
 </html>
