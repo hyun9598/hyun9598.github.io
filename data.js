@@ -11,7 +11,7 @@ window.LEARNING_SITE_CONFIG = Object.freeze({
   supabaseUrl: "https://kdioyadhvxdvftunalba.supabase.co",
 
   // Supabase 대시보드에서 확인한 sb_publishable_ 키를 따옴표 안에 입력하세요.
-  supabasePublishableKey: "여기에_본인의_sb_publishable_키_입력",
+  supabasePublishableKey: "sb_publishable_XPM7gOqx6B_TlEGizG36VA_Y6vCgPoJ",
 
   backendConnected: false,
 
