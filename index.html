@@ -68,6 +68,52 @@
     .btn { border: 1px solid var(--line); background: white; color: var(--text); padding: 9px 12px; border-radius: 10px; font-size: 12px; }
     .btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
     .hidden { display: none !important; }
+    .auth-panel {
+  width: min(420px, calc(100% - 32px));
+  margin: 8vh auto;
+  padding: 28px;
+  background: white;
+  border: 1px solid #e5e8ee;
+  border-radius: 16px;
+}
+.auth-panel h1 { font-size: 25px; }
+.auth-panel label {
+  display: block;
+  margin-top: 14px;
+  font-size: 13px;
+}
+.auth-panel input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px;
+  border: 1px solid #e5e8ee;
+  border-radius: 9px;
+}
+.auth-panel button {
+  padding: 11px;
+  border: 1px solid #e5e8ee;
+  border-radius: 9px;
+  background: white;
+}
+.auth-panel .auth-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 18px;
+}
+.auth-panel .primary {
+  background: #315efb;
+  color: white;
+}
+.auth-message {
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+body:not(.authenticated) .app { display: none; }
+body.authenticated .auth-panel { display: none; }
     .notice { padding: 12px 14px; background: #f5f7ff; border: 1px solid #e0e7ff; color: #3b4c82; border-radius: 12px; font-size: 12px; line-height: 1.6; margin-top: 16px; }
     .results { display: grid; gap: 8px; margin-top: 12px; }
     .result { padding: 12px; border: 1px solid var(--line); background: white; border-radius: 10px; font-size: 13px; }
@@ -93,6 +139,35 @@
   </style>
 </head>
 <body>
+    <section id="authPanel" class="auth-panel">
+    <h1>개인 학습 시스템</h1>
+    <p class="subtitle">이메일로 로그인하거나 새 계정을 만드세요.</p>
+
+    <form id="authForm">
+      <label for="authEmail">이메일</label>
+      <input id="authEmail" type="email" autocomplete="email"
+             required placeholder="name@example.com">
+
+      <label for="authPassword">비밀번호</label>
+      <input id="authPassword" type="password"
+             autocomplete="current-password" required
+             minlength="6" placeholder="6자 이상">
+
+      <div class="auth-actions">
+        <button class="primary" type="submit" id="loginButton">
+          로그인
+        </button>
+        <button type="button" id="signupButton">
+          회원가입
+        </button>
+      </div>
+    </form>
+
+    <button type="button" id="logoutButton" class="hidden">
+      로그아웃
+    </button>
+    <p id="authMessage" class="auth-message" role="status"></p>
+  </section>
   <div class="app">
     <aside>
       <div class="brand">
