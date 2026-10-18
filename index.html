@@ -31,7 +31,7 @@
   const config = window.LEARNING_SITE_CONFIG || {};
   const $ = id => document.getElementById(id);
   const siteName = config.siteName || '개인 학습 시스템';
-  document.title = siteName; $('brandName').textContent = siteName; $('mobileBrand').textContent = siteName; $('authTitle').textContent = siteName;
+  document.title = siteName; $('brandName').textContent = siteName; $('mobileBrand').textContent = siteName; if ($('authTitle')) $('authTitle').textContent = siteName;
   const statusEl = $('connectionStatus');
   let supabase = null, currentUser = null, records = [], searchMode = false;
   const categoryLabels = {general:'일반',study:'학습',exam:'시험',room:'학습방',research:'연구·보고서',archive:'보관함'};
