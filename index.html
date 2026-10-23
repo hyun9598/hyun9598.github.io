@@ -1,35 +1,31 @@
 <!doctype html>
-<html lang="ko">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#111827">
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Study Archive</title>
 <style>
-:root{color-scheme:dark;--bg:#0b1020;--panel:#151d31;--line:#29334c;--text:#eef2ff;--muted:#9ca9c4;--accent:#8b9cff}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#10172b,#090d18);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Noto Sans KR",sans-serif}header{max-width:1100px;margin:auto;padding:28px 20px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-size:1.25rem;font-weight:800;letter-spacing:-.03em}.pill{font-size:.78rem;color:#c7d2fe;border:1px solid #424e76;border-radius:99px;padding:5px 10px}main{max-width:1100px;margin:auto;padding:12px 20px 40px}.hero{padding:26px;border:1px solid var(--line);border-radius:24px;background:radial-gradient(ellipse at top right,#27365d 0,transparent 55%),var(--panel)}.eyebrow{color:#a5b4fc;font-size:.82rem;font-weight:700}.hero h1{font-size:clamp(1.8rem,5vw,3rem);line-height:1.1;margin:10px 0}.hero p{color:var(--muted);max-width:650px;margin:0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}.stat,.card{background:#121a2b;border:1px solid var(--line);border-radius:16px;padding:16px}.stat small{color:var(--muted);display:block}.stat strong{font-size:1.45rem}.section-head{display:flex;align-items:center;justify-content:space-between;margin:28px 0 12px}.section-head h2{font-size:1.1rem;margin:0}.muted{color:var(--muted);font-size:.85rem}.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}.card h3{margin:0 0 12px;font-size:1rem}.field{display:flex;gap:8px;margin-top:10px}.field input,.field textarea{min-width:0;flex:1;background:#0b1120;border:1px solid #34405b;border-radius:10px;color:var(--text);padding:11px;font:inherit}.field button,button{border:0;border-radius:10px;background:var(--accent);color:#0b1020;font-weight:750;padding:10px 14px;cursor:pointer}.field button:active,button:active{transform:translateY(1px)}.list{display:grid;gap:8px}.item{padding:10px 12px;border-radius:10px;background:#0b1120;border:1px solid #263149;display:flex;justify-content:space-between;gap:12px}.item span{overflow-wrap:anywhere}.item button{padding:4px 9px;background:#28334b;color:#e5eaff}.note{margin-top:14px;color:var(--muted);font-size:.8rem}footer{text-align:center;color:#73809b;padding:22px;font-size:.8rem}
-@media(max-width:700px){header{padding-top:20px}.grid{grid-template-columns:1fr}.stats{gap:8px}.stat{padding:12px}.stat strong{font-size:1.15rem}.hero{padding:20px}}
-</style>
-</head>
-<body>
-<header><div class="brand">📚 Study Archive</div><span class="pill">공동 학습 기록</span></header>
-<main>
-<section class="hero">
-<div class="eyebrow">YOUR SHARED STUDY SPACE</div>
-<h1>함께 공부하고,<br>기록을 쌓아가요.</h1>
-<p>공부 기록과 일정, 자료를 한곳에 모으는 공동 학습 아카이브입니다. 지금은 화면 시안이며, 저장·공유 기능은 데이터베이스 연결 단계에서 추가됩니다.</p>
-<div class="stats"><div class="stat"><small>오늘 공부</small><strong>0분</strong></div><div class="stat"><small>이번 주</small><strong>0시간</strong></div><div class="stat"><small>누적 기록</small><strong>0개</strong></div></div>
-</section>
-<div class="section-head"><h2>공동 공간</h2><span class="muted">초기 화면 · 로컬 미리보기</span></div>
-<div class="grid">
-<section class="card"><h3>📅 함께 보는 일정</h3><div id="events" class="list"><div class="item"><span>아직 등록된 일정이 없습니다.</span></div></div><form id="eventForm" class="field"><input id="eventInput" maxlength="120" placeholder="일정 제목 입력" required><button>추가</button></form></section>
-<section class="card"><h3>📢 공지 / 메모</h3><div id="notes" class="list"><div class="item"><span>첫 공지를 작성해 보세요.</span></div></div><form id="noteForm" class="field"><input id="noteInput" maxlength="180" placeholder="공지 또는 메모 입력" required><button>추가</button></form><p class="note">현재 입력 내용은 이 브라우저 화면에서만 유지됩니다. 새로고침하면 초기화됩니다.</p></section>
-</div>
-<section class="card" style="margin-top:14px"><h3>🔖 자료 아카이브</h3><p class="muted">공부 자료 링크와 정리 글을 모아둘 공간입니다. Supabase 연결 후 공동 저장 및 검색 기능을 구현할 예정입니다.</p></section>
-</main><footer>Study Archive · 첫 번째 화면 시안</footer>
-<script>
-function attach(formId,inputId,listId,emptyText){const form=document.getElementById(formId),input=document.getElementById(inputId),list=document.getElementById(listId);form.addEventListener('submit',e=>{e.preventDefault();const value=input.value.trim();if(!value)return;const empty=list.querySelector('.item');if(empty&&empty.textContent.trim()===emptyText)empty.remove();const row=document.createElement('div');row.className='item';const text=document.createElement('span');text.textContent=value;const del=document.createElement('button');del.type='button';del.textContent='삭제';del.addEventListener('click',()=>row.remove());row.append(text,del);list.append(row);input.value='';});}
-attach('eventForm','eventInput','events','아직 등록된 일정이 없습니다.');attach('noteForm','noteInput','notes','첫 공지를 작성해 보세요.');
-</script>
-</body>
-</html>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#10131b;color:#eef2ff;font:16px/1.5 system-ui,"Noto Sans KR",sans-serif}
+main{max-width:920px;margin:auto;padding:22px 16px 50px}header{padding:12px 0 20px}h1{font-size:clamp(28px,5vw,40px);margin:0}h2{font-size:19px;margin:0 0 12px}
+.panel{background:#1a2030;border:1px solid #303b50;border-radius:15px;padding:16px;margin:14px 0}
+input,textarea,button{width:100%;font:inherit;padding:10px;border-radius:9px;border:1px solid #35415a;background:#111725;color:#eef2ff;margin:6px 0}
+textarea{min-height:80px;resize:vertical}button{background:#293653;cursor:pointer;font-weight:600}button:hover{background:#35466a}
+.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}.status,small{color:#a8b2c7;font-size:13px}.entry{border-top:1px solid #303b50;padding:12px 0}.entry:first-child{border-top:0}.entry small{display:block}.entry button{width:auto;padding:5px 9px;font-size:12px;background:#472b35}.muted{color:#a8b2c7}
+</style></head><body><main>
+<header><h1>Study Archive</h1><p class="muted">공유 일정 · 공지사항 · 공부 기록</p><div id="status" class="status">Supabase 연결 중…</div></header>
+<section class="panel"><h2>닉네임</h2><div class="row"><input id="nickname" maxlength="24" placeholder="닉네임 입력"><button id="saveNick" style="max-width:130px">저장</button></div><small>닉네임은 표시용입니다. 익명 세션은 이 브라우저에 저장됩니다.</small></section>
+<section class="panel"><h2>공유 일정</h2><input id="eventTitle" maxlength="120" placeholder="일정 제목"><div class="row"><input id="eventDate" type="date"><input id="eventTime" type="time"></div><textarea id="eventDetails" maxlength="1000" placeholder="내용, 장소, 준비물 등"></textarea><button id="addEvent">일정 추가</button><div id="events" class="status">불러오는 중…</div></section>
+<section class="panel"><h2>공지사항</h2><input id="noticeTitle" maxlength="120" placeholder="공지 제목"><textarea id="noticeBody" maxlength="3000" placeholder="공지 내용"></textarea><button id="addNotice">공지 등록</button><div id="notices" class="status">불러오는 중…</div></section>
+<section class="panel"><h2>공부 타이머</h2><p class="muted">타이머와 개인 공부 통계는 아직 구현되지 않았습니다.</p></section>
+</main>
+<script type="module">
+import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
+const supabase=createClient("https://ohnukfxqjkeihxwzopil.supabase.co","sb_publishable_rG1j0nKNE6SwDo3DbKBprw_XNBKuaAC");
+const $=id=>document.getElementById(id);let user=null;let nickname=localStorage.getItem("study_nickname")||"";$("nickname").value=nickname;
+const escapeHTML=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const author=()=>nickname.trim()||"익명";
+$("saveNick").onclick=()=>{nickname=$("nickname").value.trim().slice(0,24);if(!nickname)return alert("닉네임을 입력해 주세요.");localStorage.setItem("study_nickname",nickname);$("status").textContent="연결됨 · 닉네임: "+nickname;};
+async function init(){try{const s=await supabase.auth.getSession();user=s.data.session?.user||null;if(!user){const a=await supabase.auth.signInAnonymously();if(a.error)throw a.error;user=a.data.user;} $("status").textContent="Supabase 연결됨";await loadEvents();await loadNotices();}catch(e){console.error(e);$("status").textContent="연결 실패: "+e.message;$("events").textContent="일정 불러오기 실패";$("notices").textContent="공지 불러오기 실패";}}
+async function loadEvents(){const{data,error}=await supabase.from("shared_events").select("id,title,event_date,event_time,details,author_name").order("event_date",{ascending:true}).limit(100);if(error){$("events").textContent="일정 오류: "+error.message;return;}if(!data.length){$("events").innerHTML='<p class="muted">등록된 일정이 없습니다.</p>';return;}$("events").innerHTML=data.map(e=>`<div class="entry"><b>${escapeHTML(e.title)}</b><small>${escapeHTML(e.event_date)} ${escapeHTML(e.event_time||"")} · ${escapeHTML(e.author_name||"익명")}</small>${e.details?`<p>${escapeHTML(e.details)}</p>`:""}<button data-event-delete="${e.id}">삭제</button></div>`).join("");document.querySelectorAll("[data-event-delete]").forEach(b=>b.onclick=async()=>{if(!confirm("이 일정을 삭제할까요?"))return;const{error}=await supabase.from("shared_events").delete().eq("id",b.dataset.eventDelete);if(error)alert("삭제 실패: "+error.message);else await loadEvents();});}
+$("addEvent").onclick=async()=>{const title=$("eventTitle").value.trim(),date=$("eventDate").value;if(!title||!date)return alert("제목과 날짜를 입력해 주세요.");const{error}=await supabase.from("shared_events").insert({title,event_date:date,event_time:$("eventTime").value||null,details:$("eventDetails").value.trim()||null,author_name:author(),created_by:user?.id});if(error){alert("저장 실패: "+error.message);return;}$("eventTitle").value="";$("eventTime").value="";$("eventDetails").value="";await loadEvents();};
+async function loadNotices(){const{data,error}=await supabase.from("notice_posts").select("id,title,body,author_name,created_at").order("created_at",{ascending:false}).limit(50);if(error){$("notices").textContent="공지 오류: "+error.message;return;}if(!data.length){$("notices").innerHTML='<p class="muted">등록된 공지가 없습니다.</p>';return;}$("notices").innerHTML=data.map(n=>`<div class="entry"><b>${escapeHTML(n.title)}</b><small>${escapeHTML(n.author_name||"익명")} · ${new Date(n.created_at).toLocaleString("ko-KR")}</small><p>${escapeHTML(n.body).replace(/\n/g,"<br>")}</p><button data-notice-delete="${n.id}">삭제</button></div>`).join("");document.querySelectorAll("[data-notice-delete]").forEach(b=>b.onclick=async()=>{if(!confirm("이 공지를 삭제할까요?"))return;const{error}=await supabase.from("notice_posts").delete().eq("id",b.dataset.noticeDelete);if(error)alert("삭제 실패: "+error.message);else await loadNotices();});}
+$("addNotice").onclick=async()=>{const title=$("noticeTitle").value.trim(),body=$("noticeBody").value.trim();if(!title||!body)return alert("공지 제목과 내용을 입력해 주세요.");const{error}=await supabase.from("notice_posts").insert({title,body,author_name:author(),created_by:user?.id});if(error){alert("저장 실패: "+error.message);return;}$("noticeTitle").value="";$("noticeBody").value="";await loadNotices();};
+init();
+</script></body></html>
