@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Study Archive</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#151d31;--line:#29334c;--text:#eef2ff;--muted:#9ca9c4;--accent:#8b9cff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#10172b,#090d18);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Noto Sans KR",sans-serif}header{max-width:1100px;margin:auto;padding:28px 20px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-size:1.25rem;font-weight:800;letter-spacing:-.03em}.pill{font-size:.78rem;color:#c7d2fe;border:1px solid #424e76;border-radius:99px;padding:5px 10px}main{max-width:1100px;margin:auto;padding:12px 20px 40px}.hero{padding:26px;border:1px solid var(--line);border-radius:24px;background:radial-gradient(ellipse at top right,#27365d 0,transparent 55%),var(--panel)}.eyebrow{color:#a5b4fc;font-size:.82rem;font-weight:700}.hero h1{font-size:clamp(1.8rem,5vw,3rem);line-height:1.1;margin:10px 0}.hero p{color:var(--muted);max-width:650px;margin:0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}.stat,.card{background:#121a2b;border:1px solid var(--line);border-radius:16px;padding:16px}.stat small{color:var(--muted);display:block}.stat strong{font-size:1.45rem}.section-head{display:flex;align-items:center;justify-content:space-between;margin:28px 0 12px}.section-head h2{font-size:1.1rem;margin:0}.muted{color:var(--muted);font-size:.85rem}.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}.card h3{margin:0 0 12px;font-size:1rem}.field{display:flex;gap:8px;margin-top:10px}.field input,.field textarea{min-width:0;flex:1;background:#0b1120;border:1px solid #34405b;border-radius:10px;color:var(--text);padding:11px;font:inherit}.field button,button{border:0;border-radius:10px;background:var(--accent);color:#0b1020;font-weight:750;padding:10px 14px;cursor:pointer}.field button:active,button:active{transform:translateY(1px)}.list{display:grid;gap:8px}.item{padding:10px 12px;border-radius:10px;background:#0b1120;border:1px solid #263149;display:flex;justify-content:space-between;gap:12px}.item span{overflow-wrap:anywhere}.item button{padding:4px 9px;background:#28334b;color:#e5eaff}.note{margin-top:14px;color:var(--muted);font-size:.8rem}footer{text-align:center;color:#73809b;padding:22px;font-size:.8rem}
+@media(max-width:700px){header{padding-top:20px}.grid{grid-template-columns:1fr}.stats{gap:8px}.stat{padding:12px}.stat strong{font-size:1.15rem}.hero{padding:20px}}
+</style>
+</head>
+<body>
+<header><div class="brand">📚 Study Archive</div><span class="pill">공동 학습 기록</span></header>
+<main>
+<section class="hero">
+<div class="eyebrow">YOUR SHARED STUDY SPACE</div>
+<h1>함께 공부하고,<br>기록을 쌓아가요.</h1>
+<p>공부 기록과 일정, 자료를 한곳에 모으는 공동 학습 아카이브입니다. 지금은 화면 시안이며, 저장·공유 기능은 데이터베이스 연결 단계에서 추가됩니다.</p>
+<div class="stats"><div class="stat"><small>오늘 공부</small><strong>0분</strong></div><div class="stat"><small>이번 주</small><strong>0시간</strong></div><div class="stat"><small>누적 기록</small><strong>0개</strong></div></div>
+</section>
+<div class="section-head"><h2>공동 공간</h2><span class="muted">초기 화면 · 로컬 미리보기</span></div>
+<div class="grid">
+<section class="card"><h3>📅 함께 보는 일정</h3><div id="events" class="list"><div class="item"><span>아직 등록된 일정이 없습니다.</span></div></div><form id="eventForm" class="field"><input id="eventInput" maxlength="120" placeholder="일정 제목 입력" required><button>추가</button></form></section>
+<section class="card"><h3>📢 공지 / 메모</h3><div id="notes" class="list"><div class="item"><span>첫 공지를 작성해 보세요.</span></div></div><form id="noteForm" class="field"><input id="noteInput" maxlength="180" placeholder="공지 또는 메모 입력" required><button>추가</button></form><p class="note">현재 입력 내용은 이 브라우저 화면에서만 유지됩니다. 새로고침하면 초기화됩니다.</p></section>
+</div>
+<section class="card" style="margin-top:14px"><h3>🔖 자료 아카이브</h3><p class="muted">공부 자료 링크와 정리 글을 모아둘 공간입니다. Supabase 연결 후 공동 저장 및 검색 기능을 구현할 예정입니다.</p></section>
+</main><footer>Study Archive · 첫 번째 화면 시안</footer>
+<script>
+function attach(formId,inputId,listId,emptyText){const form=document.getElementById(formId),input=document.getElementById(inputId),list=document.getElementById(listId);form.addEventListener('submit',e=>{e.preventDefault();const value=input.value.trim();if(!value)return;const empty=list.querySelector('.item');if(empty&&empty.textContent.trim()===emptyText)empty.remove();const row=document.createElement('div');row.className='item';const text=document.createElement('span');text.textContent=value;const del=document.createElement('button');del.type='button';del.textContent='삭제';del.addEventListener('click',()=>row.remove());row.append(text,del);list.append(row);input.value='';});}
+attach('eventForm','eventInput','events','아직 등록된 일정이 없습니다.');attach('noteForm','noteInput','notes','첫 공지를 작성해 보세요.');
+</script>
+</body>
+</html>
