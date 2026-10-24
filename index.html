@@ -16,6 +16,7 @@ textarea{min-height:80px;resize:vertical}button{background:#293653;cursor:pointe
 <section class="panel"><h2>공부 목표 & 통계</h2>
 <label for="dailyGoal" class="muted">하루 목표 (분)</label><input id="dailyGoal" type="number" min="1" max="1440" value="60">
 <button id="saveGoal">목표 저장</button><div id="goalStats" class="status">목표 통계 불러오는 중…</div>
+<h2 style="margin-top:22px">퀘스트 & 업적</h2><div id="questBoard" class="status">업적 불러오는 중…</div>
 <h2 style="margin-top:22px">공부 타이머</h2>
 <label for="studySubject" class="muted">과목 / 공부 내용</label><input id="studySubject" maxlength="100" placeholder="예: 수학 미적분">
 <div id="timerDisplay" style="font-size:clamp(32px,8vw,52px);font-weight:700;text-align:center;padding:12px 0;font-variant-numeric:tabular-nums">00:00:00</div>
@@ -45,8 +46,8 @@ function stopTicker(){if(timerInterval!==null){clearInterval(timerInterval);time
 $("timerStart").onclick=()=>{if(timerStartedAt!==null)return;if(!user)return alert("로그인 세션을 확인할 수 없습니다.");timerStartedAt=Date.now();timerInterval=setInterval(paintTimer,250);$("timerStatus").textContent="공부 중…";paintTimer();};
 $("timerPause").onclick=()=>{if(timerStartedAt!==null){timerElapsed=elapsedNow();timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="일시정지됨";}};
 $("timerReset").onclick=()=>{timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="타이머가 초기화되었습니다.";};
-$("timerSave").onclick=async()=>{const seconds=Math.floor(elapsedNow()),subject=$("studySubject").value.trim();if(!user)return alert("로그인 세션을 확인할 수 없습니다.");if(!subject)return alert("과목 또는 공부 내용을 입력해 주세요.");if(seconds<1)return alert("1초 이상 공부한 뒤 저장해 주세요.");const{error}=await supabase.from("study_sessions").insert({user_id:user.id,author_name:author(),subject,duration_seconds:seconds});if(error){alert("공부 기록 저장 실패: "+error.message);return;}timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="기록 저장 완료 · "+fmtSeconds(seconds);await loadStudySessions();};
-async function loadStudySessions(){if(!user){$("studySessions").textContent="로그인 세션이 없습니다.";return;}const{data,error}=await supabase.from("study_sessions").select("id,subject,duration_seconds,studied_at,author_name").eq("user_id",user.id).order("studied_at",{ascending:false}).limit(50);if(error){$("studyStats").textContent="공부 기록 오류: "+error.message;return;}const total=data.reduce((sum,s)=>sum+s.duration_seconds,0);$("studyStats").textContent=`최근 ${data.length}개 기록 · 누적 ${fmtSeconds(total)}`;if(!data.length){$("studySessions").innerHTML='<p class="muted">아직 저장된 공부 기록이 없습니다.</p>';return;}$("studySessions").innerHTML=data.map(s=>`<div class="entry"><b>${escapeHTML(s.subject)}</b><small>${new Date(s.studied_at).toLocaleString("ko-KR")} · ${fmtSeconds(s.duration_seconds)}</small><button data-study-delete="${s.id}">삭제</button></div>`).join("");document.querySelectorAll("[data-study-delete]").forEach(b=>b.onclick=async()=>{if(!confirm("이 공부 기록을 삭제할까요?"))return;const{error}=await supabase.from("study_sessions").delete().eq("id",b.dataset.studyDelete).eq("user_id",user.id);if(error)alert("삭제 실패: "+error.message);else await loadStudySessions();});}
+$("timerSave").onclick=async()=>{const seconds=Math.floor(elapsedNow()),subject=$("studySubject").value.trim();if(!user)return alert("로그인 세션을 확인할 수 없습니다.");if(!subject)return alert("과목 또는 공부 내용을 입력해 주세요.");if(seconds<1)return alert("1초 이상 공부한 뒤 저장해 주세요.");const{error}=await supabase.from("study_sessions").insert({user_id:user.id,author_name:author(),subject,duration_seconds:seconds});if(error){alert("공부 기록 저장 실패: "+error.message);return;}timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="기록 저장 완료 · "+fmtSeconds(seconds);await loadStudySessions();await loadQuestBoard();};
+async function loadStudySessions(){if(!user){$("studySessions").textContent="로그인 세션이 없습니다.";return;}const{data,error}=await supabase.from("study_sessions").select("id,subject,duration_seconds,studied_at,author_name").eq("user_id",user.id).order("studied_at",{ascending:false}).limit(50);if(error){$("studyStats").textContent="공부 기록 오류: "+error.message;return;}const total=data.reduce((sum,s)=>sum+s.duration_seconds,0);$("studyStats").textContent=`최근 ${data.length}개 기록 · 누적 ${fmtSeconds(total)}`;if(!data.length){$("studySessions").innerHTML='<p class="muted">아직 저장된 공부 기록이 없습니다.</p>';return;}$("studySessions").innerHTML=data.map(s=>`<div class="entry"><b>${escapeHTML(s.subject)}</b><small>${new Date(s.studied_at).toLocaleString("ko-KR")} · ${fmtSeconds(s.duration_seconds)}</small><button data-study-delete="${s.id}">삭제</button></div>`).join("");document.querySelectorAll("[data-study-delete]").forEach(b=>b.onclick=async()=>{if(!confirm("이 공부 기록을 삭제할까요?"))return;const{error}=await supabase.from("study_sessions").delete().eq("id",b.dataset.studyDelete).eq("user_id",user.id);if(error)alert("삭제 실패: "+error.message);else{await loadStudySessions();await loadQuestBoard();}});}
 
 
 // Daily goal + daily/weekly progress
@@ -67,6 +68,29 @@ async function loadGoalAndStats(){
 }
 $("saveGoal").onclick=async()=>{if(!user)return alert("로그인 세션을 확인할 수 없습니다.");const n=Number(goalInput.value);if(!Number.isInteger(n)||n<1||n>1440)return alert("목표는 1~1440분 사이의 정수로 입력해 주세요.");const{error}=await supabase.from("study_goals").upsert({user_id:user.id,daily_goal_minutes:n,updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){alert("목표 저장 실패: "+error.message);return;}await loadGoalAndStats();};
 
+
+// Quest and achievement board
+async function loadQuestBoard(){
+ if(!user){$("questBoard").textContent="로그인 세션이 없습니다.";return;}
+ const {data,error}=await supabase.from("study_sessions").select("duration_seconds,studied_at").eq("user_id",user.id);
+ if(error){$("questBoard").textContent="업적 불러오기 실패: "+error.message;return;}
+ const now=new Date(),dayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+ const weekStart=new Date(dayStart);weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7));
+ const today=data.filter(x=>new Date(x.studied_at)>=dayStart).reduce((a,x)=>a+x.duration_seconds,0);
+ const week=data.filter(x=>new Date(x.studied_at)>=weekStart).reduce((a,x)=>a+x.duration_seconds,0);
+ const total=data.reduce((a,x)=>a+x.duration_seconds,0),count=data.length;
+ const quests=[
+  ["첫 기록","공부 기록 1개 저장",count>=1],
+  ["오늘의 시작","오늘 30분 공부",today>=1800],
+  ["집중하는 날","오늘 60분 공부",today>=3600],
+  ["주간 꾸준함","이번 주 5시간 공부",week>=18000],
+  ["기록 수집가","공부 기록 10개",count>=10],
+  ["누적 10시간","총 10시간 공부",total>=36000],
+  ["누적 50시간","총 50시간 공부",total>=180000]
+ ];
+ $("questBoard").innerHTML=quests.map(([name,desc,done])=>`<div class="entry"><b>${done?"✓":"○"} ${name}</b><small>${desc} · ${done?"달성":"진행 중"}</small></div>`).join("");
+}
+
 init();
-setTimeout(loadGoalAndStats,1200);
+setTimeout(()=>{loadGoalAndStats();loadQuestBoard();},1200);
 </script></body></html>
