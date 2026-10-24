@@ -22,6 +22,10 @@ textarea{min-height:80px;resize:vertical}button{background:#293653;cursor:pointe
 <div id="timerDisplay" style="font-size:clamp(32px,8vw,52px);font-weight:700;text-align:center;padding:12px 0;font-variant-numeric:tabular-nums">00:00:00</div>
 <div class="row"><button id="timerStart">시작</button><button id="timerPause">일시정지</button><button id="timerReset">초기화</button></div>
 <button id="timerSave">공부 기록 저장</button><p id="timerStatus" class="status">타이머를 시작해 공부 시간을 기록하세요.</p>
+<h2 style="margin-top:22px">과목별 통계 & 기록 검색</h2>
+<input id="studySearch" placeholder="과목 검색어 입력">
+<select id="studyFilter"><option value="">전체 과목</option></select>
+<div id="subjectStats" class="status">과목별 통계 불러오는 중…</div>
 <h2 style="margin-top:22px">내 공부 기록</h2><div id="studyStats" class="status">기록 불러오는 중…</div><div id="studySessions"></div></section>
 </main>
 <script type="module">
@@ -47,7 +51,27 @@ $("timerStart").onclick=()=>{if(timerStartedAt!==null)return;if(!user)return ale
 $("timerPause").onclick=()=>{if(timerStartedAt!==null){timerElapsed=elapsedNow();timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="일시정지됨";}};
 $("timerReset").onclick=()=>{timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="타이머가 초기화되었습니다.";};
 $("timerSave").onclick=async()=>{const seconds=Math.floor(elapsedNow()),subject=$("studySubject").value.trim();if(!user)return alert("로그인 세션을 확인할 수 없습니다.");if(!subject)return alert("과목 또는 공부 내용을 입력해 주세요.");if(seconds<1)return alert("1초 이상 공부한 뒤 저장해 주세요.");const{error}=await supabase.from("study_sessions").insert({user_id:user.id,author_name:author(),subject,duration_seconds:seconds});if(error){alert("공부 기록 저장 실패: "+error.message);return;}timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="기록 저장 완료 · "+fmtSeconds(seconds);await loadStudySessions();await loadQuestBoard();};
-async function loadStudySessions(){if(!user){$("studySessions").textContent="로그인 세션이 없습니다.";return;}const{data,error}=await supabase.from("study_sessions").select("id,subject,duration_seconds,studied_at,author_name").eq("user_id",user.id).order("studied_at",{ascending:false}).limit(50);if(error){$("studyStats").textContent="공부 기록 오류: "+error.message;return;}const total=data.reduce((sum,s)=>sum+s.duration_seconds,0);$("studyStats").textContent=`최근 ${data.length}개 기록 · 누적 ${fmtSeconds(total)}`;if(!data.length){$("studySessions").innerHTML='<p class="muted">아직 저장된 공부 기록이 없습니다.</p>';return;}$("studySessions").innerHTML=data.map(s=>`<div class="entry"><b>${escapeHTML(s.subject)}</b><small>${new Date(s.studied_at).toLocaleString("ko-KR")} · ${fmtSeconds(s.duration_seconds)}</small><button data-study-delete="${s.id}">삭제</button></div>`).join("");document.querySelectorAll("[data-study-delete]").forEach(b=>b.onclick=async()=>{if(!confirm("이 공부 기록을 삭제할까요?"))return;const{error}=await supabase.from("study_sessions").delete().eq("id",b.dataset.studyDelete).eq("user_id",user.id);if(error)alert("삭제 실패: "+error.message);else{await loadStudySessions();await loadQuestBoard();}});}
+
+// Search/filter records and subject totals
+let cachedStudyRows=[];
+function refreshStudyFilters(){
+ const names=[...new Set(cachedStudyRows.map(x=>x.subject))].sort((a,b)=>a.localeCompare(b,"ko"));
+ const select=$("studyFilter"),prev=select.value;
+ select.innerHTML='<option value="">전체 과목</option>'+names.map(n=>`<option value="${escapeHTML(n)}">${escapeHTML(n)}</option>`).join("");
+ if(names.includes(prev))select.value=prev;
+ const totals={};cachedStudyRows.forEach(x=>totals[x.subject]=(totals[x.subject]||0)+x.duration_seconds);
+ $("subjectStats").innerHTML=Object.entries(totals).sort((a,b)=>b[1]-a[1]).map(([name,sec])=>`<div class="entry"><b>${escapeHTML(name)}</b><small>누적 ${fmtSeconds(sec)}</small></div>`).join("")||"아직 과목 기록이 없습니다.";
+ renderStudyRows();
+}
+function renderStudyRows(){
+ const q=$("studySearch").value.trim().toLowerCase(),f=$("studyFilter").value;
+ const rows=cachedStudyRows.filter(x=>(!f||x.subject===f)&&(!q||x.subject.toLowerCase().includes(q)));
+ $("studySessions").innerHTML=rows.map(s=>`<div class="entry"><b>${escapeHTML(s.subject)}</b><small>${new Date(s.studied_at).toLocaleString("ko-KR")} · ${fmtSeconds(s.duration_seconds)}</small><button data-study-delete="${s.id}">삭제</button></div>`).join("")||'<p class="muted">검색 결과가 없습니다.</p>';
+ document.querySelectorAll("[data-study-delete]").forEach(b=>b.onclick=async()=>{if(!confirm("이 공부 기록을 삭제할까요?"))return;const{error}=await supabase.from("study_sessions").delete().eq("id",b.dataset.studyDelete).eq("user_id",user.id);if(error)alert("삭제 실패: "+error.message);else{await loadStudySessions();await loadQuestBoard();}});
+}
+$("studySearch").oninput=renderStudyRows;$("studyFilter").onchange=renderStudyRows;
+
+async function loadStudySessions(){if(!user){$("studySessions").textContent="로그인 세션이 없습니다.";return;}const{data,error}=await supabase.from("study_sessions").select("id,subject,duration_seconds,studied_at,author_name").eq("user_id",user.id).order("studied_at",{ascending:false}).limit(50);if(error){$("studyStats").textContent="공부 기록 오류: "+error.message;return;}cachedStudyRows=data;const total=data.reduce((sum,s)=>sum+s.duration_seconds,0);$("studyStats").textContent=`최근 ${data.length}개 기록 · 누적 ${fmtSeconds(total)}`;refreshStudyFilters();}
 
 
 // Daily goal + daily/weekly progress
