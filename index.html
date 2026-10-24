@@ -22,6 +22,7 @@ textarea{min-height:80px;resize:vertical}button{background:#293653;cursor:pointe
 <div id="timerDisplay" style="font-size:clamp(32px,8vw,52px);font-weight:700;text-align:center;padding:12px 0;font-variant-numeric:tabular-nums">00:00:00</div>
 <div class="row"><button id="timerStart">시작</button><button id="timerPause">일시정지</button><button id="timerReset">초기화</button></div>
 <button id="timerSave">공부 기록 저장</button><p id="timerStatus" class="status">타이머를 시작해 공부 시간을 기록하세요.</p>
+<h2 style="margin-top:22px">공부 연속 기록</h2><div id="streakBoard" class="status">연속 기록 계산 중…</div>
 <h2 style="margin-top:22px">월간 공부 리포트</h2>
 <label for="reportMonth" class="muted">월 선택</label><input id="reportMonth" type="month">
 <button id="loadMonthlyReport">리포트 보기</button><div id="monthlyReport" class="status">월을 선택하고 리포트를 불러오세요.</div>
@@ -35,6 +36,19 @@ textarea{min-height:80px;resize:vertical}button{background:#293653;cursor:pointe
 <select id="studyFilter"><option value="">전체 과목</option></select>
 <div id="subjectStats" class="status">과목별 통계 불러오는 중…</div>
 <h2 style="margin-top:22px">내 공부 기록</h2><div id="studyStats" class="status">기록 불러오는 중…</div><div id="studySessions"></div></section>
+
+<section class="panel" id="materialsPanel">
+<h2>학습 자료 보관함</h2>
+<p class="muted">링크와 메모를 저장하고 과목별로 검색합니다. 이 보관함은 현재 사용 중인 브라우저에 저장됩니다.</p>
+<div class="form-grid">
+<label>자료 제목<input id="materialTitle" placeholder="예: 미적분 개념 정리"></label>
+<label>과목<input id="materialSubject" placeholder="예: 수학"></label>
+<label>자료 링크<input id="materialUrl" type="url" placeholder="https://..."></label>
+<label>메모<input id="materialNote" placeholder="핵심 내용 또는 참고 메모"></label>
+</div>
+<div class="actions"><button id="addMaterial">자료 저장</button><input id="materialSearch" placeholder="제목·과목·메모 검색"></div>
+<div id="materialList"></div>
+</section>
 </main>
 <script type="module">
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
@@ -58,9 +72,26 @@ function stopTicker(){if(timerInterval!==null){clearInterval(timerInterval);time
 $("timerStart").onclick=()=>{if(timerStartedAt!==null)return;if(!user)return alert("로그인 세션을 확인할 수 없습니다.");timerStartedAt=Date.now();timerInterval=setInterval(paintTimer,250);$("timerStatus").textContent="공부 중…";paintTimer();};
 $("timerPause").onclick=()=>{if(timerStartedAt!==null){timerElapsed=elapsedNow();timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="일시정지됨";}};
 $("timerReset").onclick=()=>{timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="타이머가 초기화되었습니다.";};
-$("timerSave").onclick=async()=>{const seconds=Math.floor(elapsedNow()),subject=$("studySubject").value.trim();if(!user)return alert("로그인 세션을 확인할 수 없습니다.");if(!subject)return alert("과목 또는 공부 내용을 입력해 주세요.");if(seconds<1)return alert("1초 이상 공부한 뒤 저장해 주세요.");const{error}=await supabase.from("study_sessions").insert({user_id:user.id,author_name:author(),subject,duration_seconds:seconds});if(error){alert("공부 기록 저장 실패: "+error.message);return;}timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="기록 저장 완료 · "+fmtSeconds(seconds);await loadStudySessions();await loadQuestBoard();};
+$("timerSave").onclick=async()=>{const seconds=Math.floor(elapsedNow()),subject=$("studySubject").value.trim();if(!user)return alert("로그인 세션을 확인할 수 없습니다.");if(!subject)return alert("과목 또는 공부 내용을 입력해 주세요.");if(seconds<1)return alert("1초 이상 공부한 뒤 저장해 주세요.");const{error}=await supabase.from("study_sessions").insert({user_id:user.id,author_name:author(),subject,duration_seconds:seconds});if(error){alert("공부 기록 저장 실패: "+error.message);return;}timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="기록 저장 완료 · "+fmtSeconds(seconds);await loadStudySessions();await loadQuestBoard();await loadStreakBoard();};
 
 
+
+
+// Study streak and calendar heatmap
+async function loadStreakBoard(){
+ if(!user){$("streakBoard").textContent="로그인 세션이 없습니다.";return;}
+ const {data,error}=await supabase.from("study_sessions").select("duration_seconds,studied_at").eq("user_id",user.id);
+ if(error){$("streakBoard").textContent="연속 기록 계산 실패: "+error.message;return;}
+ const dayTotals={};(data||[]).forEach(x=>{const d=new Date(x.studied_at),key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;dayTotals[key]=(dayTotals[key]||0)+x.duration_seconds;});
+ const today=new Date();today.setHours(0,0,0,0);const keyOf=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+ let streak=0,cursor=new Date(today);if(!dayTotals[keyOf(cursor)])cursor.setDate(cursor.getDate()-1);
+ while(dayTotals[keyOf(cursor)]){streak++;cursor.setDate(cursor.getDate()-1);}
+ const bestKeys=Object.keys(dayTotals).sort();let best=0,run=0,prev=null;
+ bestKeys.forEach(k=>{const d=new Date(k+"T00:00:00");if(prev){const diff=(d-prev)/86400000;run=diff===1?run+1:1;}else run=1;best=Math.max(best,run);prev=d;});
+ const start=new Date(today);start.setDate(start.getDate()-27);const cells=[];
+ for(let i=0;i<28;i++){const d=new Date(start);d.setDate(start.getDate()+i);const k=keyOf(d),sec=dayTotals[k]||0;cells.push(`<div title="${k}: ${fmtSeconds(sec)}" style="min-height:30px;border-radius:5px;background:${sec>0?"#5a9b78":"var(--muted-bg, #e8e8e8)"};opacity:${sec?Math.min(1,.45+sec/14400):.55};display:flex;align-items:center;justify-content:center;font-size:11px;color:${sec?"white":"inherit"}">${d.getDate()}</div>`);}
+ $("streakBoard").innerHTML=`<b>현재 연속 공부일</b>: ${streak}일 · <b>최장 연속</b>: ${best}일<h3>최근 28일</h3><div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px">${cells.join("")}</div><small>색이 진할수록 공부 시간이 많습니다. 날짜를 누르거나 가리키면 시간 확인.</small>`;
+}
 
 // Monthly study report
 const monthInput=$("reportMonth");
@@ -101,7 +132,7 @@ $("restoreBackup").onclick=async()=>{
  if(rows.length){const{error}=await supabase.from("study_sessions").insert(rows);if(error){$("backupStatus").textContent="기록 복원 실패: "+error.message;return;}}
  const{error:goalError}=await supabase.from("study_goals").upsert({user_id:user.id,daily_goal_minutes:pendingBackup.daily_goal_minutes,updated_at:new Date().toISOString()},{onConflict:"user_id"});
  if(goalError){$("backupStatus").textContent="목표 복원 실패: "+goalError.message;return;}
- $("backupStatus").textContent="복원 완료";pendingBackup=null;await loadStudySessions();await loadGoalAndStats();await loadQuestBoard();
+ $("backupStatus").textContent="복원 완료";pendingBackup=null;await loadStudySessions();await loadGoalAndStats();await loadQuestBoard();await loadStreakBoard();
 };
 
 // Search/filter records and subject totals
@@ -168,5 +199,28 @@ async function loadQuestBoard(){
 }
 
 init();
-setTimeout(()=>{loadGoalAndStats();loadQuestBoard();},1200);
+setTimeout(()=>{loadGoalAndStats();loadQuestBoard();loadStreakBoard();},1200);
+
+const MATERIAL_KEY="study_archive_materials_v1";
+function getMaterials(){try{return JSON.parse(localStorage.getItem(MATERIAL_KEY)||"[]")}catch(e){return []}}
+function saveMaterials(items){localStorage.setItem(MATERIAL_KEY,JSON.stringify(items));renderMaterials()}
+function renderMaterials(){
+ const q=(document.getElementById("materialSearch").value||"").trim().toLowerCase();
+ const items=getMaterials().filter(x=>[x.title,x.subject,x.note,x.url].join(" ").toLowerCase().includes(q));
+ const host=document.getElementById("materialList");
+ if(!items.length){host.innerHTML='<div class="entry"><small>저장된 자료가 없습니다.</small></div>';return}
+ host.innerHTML=items.sort((a,b)=>b.created-a.created).map(x=>`<div class="entry"><b>${escMaterial(x.title)}</b><small>${escMaterial(x.subject||"과목 미지정")} · ${escMaterial(x.note||"메모 없음")}</small><p><a href="${safeMaterialUrl(x.url)}" target="_blank" rel="noopener noreferrer">자료 열기</a></p><button class="deleteMaterial" data-id="${x.id}">삭제</button></div>`).join("");
+ host.querySelectorAll(".deleteMaterial").forEach(b=>b.addEventListener("click",()=>{saveMaterials(getMaterials().filter(x=>x.id!==b.dataset.id))}));
+}
+function escMaterial(v){return String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function safeMaterialUrl(v){try{const u=new URL(v);return ["http:","https:"].includes(u.protocol)?escMaterial(u.href):"#"}catch(e){return "#"}}
+document.getElementById("addMaterial").addEventListener("click",()=>{
+ const title=document.getElementById("materialTitle").value.trim(),subject=document.getElementById("materialSubject").value.trim(),url=document.getElementById("materialUrl").value.trim(),note=document.getElementById("materialNote").value.trim();
+ if(!title){alert("자료 제목을 입력하세요.");return}
+ if(!url||safeMaterialUrl(url)==="#"){alert("올바른 http 또는 https 링크를 입력하세요.");return}
+ const items=getMaterials();items.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),title,subject,url,note,created:Date.now()});saveMaterials(items);
+ ["materialTitle","materialSubject","materialUrl","materialNote"].forEach(id=>document.getElementById(id).value="");
+});
+document.getElementById("materialSearch").addEventListener("input",renderMaterials);
+renderMaterials();
 </script></body></html>
