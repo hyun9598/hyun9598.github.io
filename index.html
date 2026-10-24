@@ -1,17 +1,33 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Study Archive</title>
+
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#10131b;color:#eef2ff;font:16px/1.5 system-ui,"Noto Sans KR",sans-serif}
-main{max-width:920px;margin:auto;padding:22px 16px 50px}header{padding:12px 0 20px}h1{font-size:clamp(28px,5vw,40px);margin:0}h2{font-size:19px;margin:0 0 12px}
-.panel{background:#1a2030;border:1px solid #303b50;border-radius:15px;padding:16px;margin:14px 0}
-input,textarea,button{width:100%;font:inherit;padding:10px;border-radius:9px;border:1px solid #35415a;background:#111725;color:#eef2ff;margin:6px 0}
-textarea{min-height:80px;resize:vertical}button{background:#293653;cursor:pointer;font-weight:600}button:hover{background:#35466a}
-.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}.status,small{color:#a8b2c7;font-size:13px}.entry{border-top:1px solid #303b50;padding:12px 0}.entry:first-child{border-top:0}.entry small{display:block}.entry button{width:auto;padding:5px 9px;font-size:12px;background:#472b35}.entry button.edit{background:#293653;margin-right:6px}.muted{color:#a8b2c7}
-</style></head><body><main>
-<header><h1>Study Archive</h1><p class="muted">공유 일정 · 공지사항 · 공부 기록</p><div id="status" class="status">Supabase 연결 중…</div></header>
-<section class="panel"><h2>닉네임</h2><div class="row"><input id="nickname" maxlength="24" placeholder="닉네임 입력"><button id="saveNick" style="max-width:130px">저장</button></div><small>닉네임은 표시용입니다. 익명 세션은 이 브라우저에 저장됩니다.</small></section>
-<section class="panel"><h2>공유 일정</h2><input id="eventTitle" maxlength="120" placeholder="일정 제목"><div class="row"><input id="eventDate" type="date"><input id="eventTime" type="time"></div><textarea id="eventDetails" maxlength="1000" placeholder="내용, 장소, 준비물 등"></textarea><button id="addEvent">일정 추가</button><div id="events" class="status">불러오는 중…</div></section>
+:root{color-scheme:light;--bg:#f3f6fb;--surface:#fff;--line:#e2e8f0;--text:#17243b;--muted:#718096;--blue:#4f7ee8;--blue2:#dce8ff;--green:#16856b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,"Noto Sans KR",sans-serif}
+main{max-width:1500px;margin:auto;padding:20px 24px 48px}header{padding:12px 0 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}h1{font-size:clamp(24px,3vw,34px);margin:0}h2{font-size:18px;margin:0 0 12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;margin:0;box-shadow:0 3px 14px #1d35570a}
+main>section{margin-bottom:16px}
+input,textarea,button{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid #d9e2ef;background:#fff;color:var(--text);margin:6px 0}
+textarea{min-height:80px;resize:vertical}button{background:var(--blue);color:white;border-color:var(--blue);cursor:pointer;font-weight:600}button:hover{filter:brightness(.96)}
+.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}.status,small{color:var(--muted);font-size:13px}.entry{border-top:1px solid var(--line);padding:12px 0}.entry:first-child{border-top:0}.entry small{display:block}.entry button{width:auto;padding:5px 9px;font-size:12px;background:#fff;color:#c34d5a;border-color:#f0d5d9}.entry button.edit{background:var(--blue2);color:#315bb7;border-color:var(--blue2);margin-right:6px}.muted{color:var(--muted)}
+/* responsive dashboard layout */
+#dashboardGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+#dashboardGrid>.panel{min-width:0}
+#dashboardGrid>.panel:first-child{grid-column:span 1}
+#dashboardGrid>.panel:nth-child(2){grid-column:span 1}
+#dashboardGrid>.panel:nth-child(3){grid-column:span 1}
+#dashboardGrid>.panel:nth-child(n+4){grid-column:span 1}
+nav#mainNav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+nav#mainNav a{display:inline-flex;text-decoration:none;color:#334a68;background:#e8eef8;padding:9px 14px;border-radius:10px;font-weight:600}
+nav#mainNav a.active{background:#dce8ff;color:#315bb7}
+@media(max-width:900px){main{padding:14px}#dashboardGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){#dashboardGrid{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column}nav#mainNav{display:grid;grid-template-columns:repeat(2,1fr)}nav#mainNav a{justify-content:center}}
+</style>
+</head><body><main>
+<header><h1>Study Archive</h1><p class="muted">공유 일정 · 공지사항 · 공부 기록</p><div id="status" class="status">Supabase 연결 중…</div></header><nav id="mainNav"><a href="#dashboardGrid" class="active">홈·통계</a><a href="#materialsPanel">자료 보관함</a><a href="#studyPanel">공부 기록</a><a href="#eventsPanel">일정·공지</a><a href="#settingsPanel">설정</a></nav>
+<section class="panel" id="settingsPanel"><h2>닉네임</h2><div class="row"><input id="nickname" maxlength="24" placeholder="닉네임 입력"><button id="saveNick" style="max-width:130px">저장</button></div><small>닉네임은 표시용입니다. 익명 세션은 이 브라우저에 저장됩니다.</small></section>
+<section class="panel" id="eventsPanel"><h2>공유 일정</h2><input id="eventTitle" maxlength="120" placeholder="일정 제목"><div class="row"><input id="eventDate" type="date"><input id="eventTime" type="time"></div><textarea id="eventDetails" maxlength="1000" placeholder="내용, 장소, 준비물 등"></textarea><button id="addEvent">일정 추가</button><div id="events" class="status">불러오는 중…</div></section>
 <section class="panel"><h2>공지사항</h2><input id="noticeTitle" maxlength="120" placeholder="공지 제목"><textarea id="noticeBody" maxlength="3000" placeholder="공지 내용"></textarea><button id="addNotice">공지 등록</button><div id="notices" class="status">불러오는 중…</div></section>
 <section class="panel"><h2>공부 목표 & 통계</h2>
 <label for="dailyGoal" class="muted">하루 목표 (분)</label><input id="dailyGoal" type="number" min="1" max="1440" value="60">
