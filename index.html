@@ -22,6 +22,11 @@ textarea{min-height:80px;resize:vertical}button{background:#293653;cursor:pointe
 <div id="timerDisplay" style="font-size:clamp(32px,8vw,52px);font-weight:700;text-align:center;padding:12px 0;font-variant-numeric:tabular-nums">00:00:00</div>
 <div class="row"><button id="timerStart">시작</button><button id="timerPause">일시정지</button><button id="timerReset">초기화</button></div>
 <button id="timerSave">공부 기록 저장</button><p id="timerStatus" class="status">타이머를 시작해 공부 시간을 기록하세요.</p>
+<h2 style="margin-top:22px">백업 & 복원</h2>
+<p class="muted">개인 공부 기록과 목표를 JSON 파일로 내려받거나 복원합니다. 공유 일정과 공지는 포함하지 않습니다.</p>
+<button id="exportBackup">개인 기록 백업</button>
+<label for="importBackup" class="muted">백업 JSON 복원</label><input id="importBackup" type="file" accept=".json,application/json">
+<button id="restoreBackup">백업 복원</button><p id="backupStatus" class="status"></p>
 <h2 style="margin-top:22px">과목별 통계 & 기록 검색</h2>
 <input id="studySearch" placeholder="과목 검색어 입력">
 <select id="studyFilter"><option value="">전체 과목</option></select>
@@ -51,6 +56,29 @@ $("timerStart").onclick=()=>{if(timerStartedAt!==null)return;if(!user)return ale
 $("timerPause").onclick=()=>{if(timerStartedAt!==null){timerElapsed=elapsedNow();timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="일시정지됨";}};
 $("timerReset").onclick=()=>{timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="타이머가 초기화되었습니다.";};
 $("timerSave").onclick=async()=>{const seconds=Math.floor(elapsedNow()),subject=$("studySubject").value.trim();if(!user)return alert("로그인 세션을 확인할 수 없습니다.");if(!subject)return alert("과목 또는 공부 내용을 입력해 주세요.");if(seconds<1)return alert("1초 이상 공부한 뒤 저장해 주세요.");const{error}=await supabase.from("study_sessions").insert({user_id:user.id,author_name:author(),subject,duration_seconds:seconds});if(error){alert("공부 기록 저장 실패: "+error.message);return;}timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="기록 저장 완료 · "+fmtSeconds(seconds);await loadStudySessions();await loadQuestBoard();};
+
+
+// Export/import private study sessions and daily goal
+let pendingBackup=null;
+$("exportBackup").onclick=async()=>{
+ if(!user)return alert("로그인 세션을 확인할 수 없습니다.");
+ const {data:sessions,error:e1}=await supabase.from("study_sessions").select("subject,duration_seconds,studied_at,author_name").eq("user_id",user.id);
+ const {data:goal,error:e2}=await supabase.from("study_goals").select("daily_goal_minutes").eq("user_id",user.id).maybeSingle();
+ if(e1||e2){$("backupStatus").textContent="백업 실패: "+(e1?.message||e2?.message);return;}
+ const payload={format:"study-archive-backup-v1",exported_at:new Date().toISOString(),study_sessions:sessions||[],daily_goal_minutes:goal?.daily_goal_minutes||60};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="study-archive-backup.json";a.click();URL.revokeObjectURL(url);
+ $("backupStatus").textContent=`백업 준비 완료 · 공부 기록 ${(sessions||[]).length}개`;
+};
+$("importBackup").onchange=async(e)=>{const file=e.target.files?.[0];if(!file){pendingBackup=null;return;}try{const parsed=JSON.parse(await file.text());if(parsed.format!=="study-archive-backup-v1"||!Array.isArray(parsed.study_sessions)||!Number.isInteger(parsed.daily_goal_minutes)||parsed.daily_goal_minutes<1||parsed.daily_goal_minutes>1440)throw new Error("백업 형식이 올바르지 않습니다.");if(parsed.study_sessions.some(x=>typeof x.subject!=="string"||!Number.isInteger(x.duration_seconds)||x.duration_seconds<1||!x.studied_at))throw new Error("공부 기록 데이터가 올바르지 않습니다.");pendingBackup=parsed;$("backupStatus").textContent=`복원 준비: 기록 ${parsed.study_sessions.length}개, 목표 ${parsed.daily_goal_minutes}분`; }catch(err){pendingBackup=null;$("backupStatus").textContent="파일 확인 실패: "+err.message;}};
+$("restoreBackup").onclick=async()=>{
+ if(!user)return alert("로그인 세션을 확인할 수 없습니다.");if(!pendingBackup)return alert("먼저 백업 JSON 파일을 선택해 주세요.");if(!confirm(`현재 계정에 백업 기록 ${pendingBackup.study_sessions.length}개를 추가하고 하루 목표를 ${pendingBackup.daily_goal_minutes}분으로 설정할까요? 기존 기록은 삭제하지 않습니다.`))return;
+ const rows=pendingBackup.study_sessions.map(x=>({user_id:user.id,author_name:author(),subject:x.subject,duration_seconds:x.duration_seconds,studied_at:x.studied_at}));
+ if(rows.length){const{error}=await supabase.from("study_sessions").insert(rows);if(error){$("backupStatus").textContent="기록 복원 실패: "+error.message;return;}}
+ const{error:goalError}=await supabase.from("study_goals").upsert({user_id:user.id,daily_goal_minutes:pendingBackup.daily_goal_minutes,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+ if(goalError){$("backupStatus").textContent="목표 복원 실패: "+goalError.message;return;}
+ $("backupStatus").textContent="복원 완료";pendingBackup=null;await loadStudySessions();await loadGoalAndStats();await loadQuestBoard();
+};
 
 // Search/filter records and subject totals
 let cachedStudyRows=[];
