@@ -22,6 +22,9 @@ textarea{min-height:80px;resize:vertical}button{background:#293653;cursor:pointe
 <div id="timerDisplay" style="font-size:clamp(32px,8vw,52px);font-weight:700;text-align:center;padding:12px 0;font-variant-numeric:tabular-nums">00:00:00</div>
 <div class="row"><button id="timerStart">시작</button><button id="timerPause">일시정지</button><button id="timerReset">초기화</button></div>
 <button id="timerSave">공부 기록 저장</button><p id="timerStatus" class="status">타이머를 시작해 공부 시간을 기록하세요.</p>
+<h2 style="margin-top:22px">월간 공부 리포트</h2>
+<label for="reportMonth" class="muted">월 선택</label><input id="reportMonth" type="month">
+<button id="loadMonthlyReport">리포트 보기</button><div id="monthlyReport" class="status">월을 선택하고 리포트를 불러오세요.</div>
 <h2 style="margin-top:22px">백업 & 복원</h2>
 <p class="muted">개인 공부 기록과 목표를 JSON 파일로 내려받거나 복원합니다. 공유 일정과 공지는 포함하지 않습니다.</p>
 <button id="exportBackup">개인 기록 백업</button>
@@ -57,6 +60,27 @@ $("timerPause").onclick=()=>{if(timerStartedAt!==null){timerElapsed=elapsedNow()
 $("timerReset").onclick=()=>{timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="타이머가 초기화되었습니다.";};
 $("timerSave").onclick=async()=>{const seconds=Math.floor(elapsedNow()),subject=$("studySubject").value.trim();if(!user)return alert("로그인 세션을 확인할 수 없습니다.");if(!subject)return alert("과목 또는 공부 내용을 입력해 주세요.");if(seconds<1)return alert("1초 이상 공부한 뒤 저장해 주세요.");const{error}=await supabase.from("study_sessions").insert({user_id:user.id,author_name:author(),subject,duration_seconds:seconds});if(error){alert("공부 기록 저장 실패: "+error.message);return;}timerElapsed=0;timerStartedAt=null;stopTicker();paintTimer();$("timerStatus").textContent="기록 저장 완료 · "+fmtSeconds(seconds);await loadStudySessions();await loadQuestBoard();};
 
+
+
+// Monthly study report
+const monthInput=$("reportMonth");
+const dnow=new Date();monthInput.value=`${dnow.getFullYear()}-${String(dnow.getMonth()+1).padStart(2,"0")}`;
+$("loadMonthlyReport").onclick=async()=>{
+ if(!user)return alert("로그인 세션을 확인할 수 없습니다.");
+ const val=monthInput.value;if(!/^\d{4}-\d{2}$/.test(val))return alert("월을 선택해 주세요.");
+ const [yy,mm]=val.split("-").map(Number),start=new Date(yy,mm-1,1),end=new Date(yy,mm,1);
+ const {data,error}=await supabase.from("study_sessions").select("subject,duration_seconds,studied_at").eq("user_id",user.id).gte("studied_at",start.toISOString()).lt("studied_at",end.toISOString()).order("studied_at",{ascending:true});
+ if(error){$("monthlyReport").textContent="리포트 오류: "+error.message;return;}
+ const rows=data||[],total=rows.reduce((a,x)=>a+x.duration_seconds,0),days=new Set(rows.map(x=>new Date(x.studied_at).toLocaleDateString("en-CA"))).size;
+ const subjects={};rows.forEach(x=>subjects[x.subject]=(subjects[x.subject]||0)+x.duration_seconds);
+ const top=Object.entries(subjects).sort((a,b)=>b[1]-a[1])[0];
+ const {data:goal}=await supabase.from("study_goals").select("daily_goal_minutes").eq("user_id",user.id).maybeSingle();
+ const goalMinutes=(goal?.daily_goal_minutes||60),goalDays=Math.ceil((end-start)/86400000),expected=goalMinutes*60*goalDays,pct=expected?Math.min(100,Math.round(total/expected*100)):0;
+ const daily={};rows.forEach(x=>{const d=new Date(x.studied_at),key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;daily[key]=(daily[key]||0)+x.duration_seconds;});
+ const dailyHtml=Object.entries(daily).sort((a,b)=>a[0].localeCompare(b[0])).map(([d,t])=>`<div class="entry"><b>${d}</b><small>${fmtSeconds(t)}</small></div>`).join("")||'<p class="muted">이 달의 공부 기록이 없습니다.</p>';
+ const subjectHtml=Object.entries(subjects).sort((a,b)=>b[1]-a[1]).map(([n,t])=>`<div class="entry"><b>${escapeHTML(n)}</b><small>${fmtSeconds(t)}</small></div>`).join("")||'<p class="muted">과목 기록 없음</p>';
+ $("monthlyReport").innerHTML=`<b>${val} 리포트</b><p>총 공부 시간: ${fmtSeconds(total)}</p><p>공부한 날짜: ${days}일</p><p>하루 평균(달력 기준): ${fmtSeconds(Math.round(total/goalDays))}</p><p>가장 많이 공부한 과목: ${top?escapeHTML(top[0])+" · "+fmtSeconds(top[1]):"없음"}</p><p>월간 목표 진행률: ${pct}% (${goalMinutes}분/일 기준)</p><h3>과목별</h3>${subjectHtml}<h3>날짜별</h3>${dailyHtml}`;
+};
 
 // Export/import private study sessions and daily goal
 let pendingBackup=null;
