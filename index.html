@@ -5,53 +5,38 @@
 
 
 
+
 <style>
 @import url('https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css');
-:root{color-scheme:light;--bg:#f4f7fd;--card:#fff;--ink:#1f2937;--muted:#6b7280;--line:#e7edf6;--blue:#4267d6;--blue2:#7b93ff;--bluewash:#edf2ff;--green:#16845b;--orange:#c57a25;--purple:#8c7be8}
+:root{--bg:#f4f7fd;--card:#fff;--ink:#1f2937;--muted:#6b7280;--line:#e6edf6;--blue:#4267d6;--blue2:#7b93ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Pretendard,system-ui,sans-serif}
-main{max-width:none;margin:0;padding:0 28px 100px 268px}header{height:76px;display:flex;align-items:center;justify-content:flex-end;gap:18px;border-bottom:1px solid var(--line);padding:0 4px}
-header h1{display:none}header p{display:none}#status{font-size:13px;color:var(--green);display:flex;align-items:center;gap:7px}#status:before{content:"";width:8px;height:8px;border-radius:50%;background:#22a06b;display:inline-block}
-h2{font-size:17px;font-weight:750;margin:0 0 15px}.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;margin:0 0 20px;box-shadow:0 4px 20px rgba(40,60,120,.06)}
-input,textarea,select{font:inherit;color:var(--ink);background:#fff;border:1px solid #dce4ef;border-radius:11px;min-height:44px;padding:10px 12px;width:100%;margin:6px 0}
-textarea{min-height:100px}button{font:600 14px Pretendard,system-ui;min-height:42px;width:auto;padding:9px 15px;border:1px solid #d6deeb;border-radius:11px;background:#fff;color:var(--blue);cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
-button:hover{background:#edf2ff}button:active{transform:translateY(1px)}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #a8c1ff;outline-offset:2px}
-button#saveNick,button#addEvent,button#addNotice,button#saveGoal,button#timerStart,button#timerSave,button#addMaterial{background:var(--blue);color:white;border-color:var(--blue)}
-button#restoreBackup,.entry button:not(.edit){color:#d33f4e;border-color:#f1c9ce;background:#fff}
-.row{display:flex;gap:8px;align-items:center}.row>*{min-width:0;flex:1}.muted,small,.status{color:var(--muted);font-size:13px}.entry{border-top:1px solid var(--line);padding:13px 0}.entry:first-child{border-top:0}.entry small{display:block}
-#mainNav{position:fixed;inset:0 auto 0 0;width:240px;background:#fff;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:7px;z-index:20}
-#mainNav:before{content:"📘  함께하는 학습 아카이브\\A 기록이 모여, 더 큰 성장을";white-space:pre;line-height:1.6;font-size:16px;font-weight:800;color:var(--ink);padding:8px 12px 24px}
-#mainNav a{display:flex;align-items:center;gap:12px;min-height:46px;padding:11px 14px;text-decoration:none;color:#69778b;border-radius:12px;font-weight:650}
-#mainNav a.active{background:#eaf0ff;color:var(--blue)}
-#mainNav a:last-child{margin-top:auto}
-.tab-view{display:none;max-width:1200px;margin:20px auto 0}.tab-view.active{display:block}
-.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:560px}.form-grid label{font-size:14px;font-weight:650}
-#timerDisplay{font-size:56px!important;color:var(--blue);font-weight:800!important;font-variant-numeric:tabular-nums}
+main{padding:0 24px 90px 264px}header{height:68px;display:flex;align-items:center;justify-content:space-between;border:0;padding:0;max-width:1200px;margin:auto}header h1{display:block;font-size:26px;margin:0}header p{display:none}
+#status{display:none}.user-chip{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:24px;padding:5px 12px 5px 5px;font-weight:650}.user-chip #userAvatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:white;font-weight:800}.user-chip #connectionDot{width:9px;height:9px;border-radius:50%;background:#22a06b;align-self:flex-end;margin-left:-14px;border:1px solid white}
+#mainNav{position:fixed;inset:0 auto 0 0;width:240px;background:#fff;border-right:1px solid var(--line);padding:18px 13px;display:flex;flex-direction:column;gap:6px;z-index:30}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 9px 25px}.brandIcon{font-size:25px;color:var(--blue)}.brand strong{display:block;white-space:nowrap;font-size:15px}.brand span:not(.brandIcon){display:block;color:var(--muted);font-size:13px;line-height:1.4;margin-top:3px}
+#mainNav a{display:flex;align-items:center;gap:12px;min-height:46px;padding:10px 13px;text-decoration:none;color:#69778b;border-radius:12px;font-weight:650}#mainNav a span{width:22px;text-align:center;font-size:18px}#mainNav a.active{background:#eaf0ff;color:var(--blue)}.sidebarNote{margin-top:auto;border-radius:14px;padding:14px;background:linear-gradient(145deg,#edf4ff,#e7f5f1);font-size:14px;color:#4b617b}
+.tab-view{display:none;max-width:1200px;margin:12px auto 0}.tab-view.active{display:block}
+.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;margin:0 0 20px;box-shadow:0 4px 20px rgba(40,60,120,.06)}h2{font-size:17px;font-weight:750;margin:0 0 15px}
+input,textarea,select{font:inherit;color:var(--ink);background:#fff;border:1px solid #dce4ef;border-radius:11px;min-height:44px;padding:10px 12px;width:100%;margin:6px 0}textarea{min-height:100px}
+button{font:600 14px Pretendard,system-ui;min-height:42px;width:auto;padding:9px 15px;border:1px solid #d6deeb;border-radius:11px;background:#fff;color:var(--blue);cursor:pointer;transition:background .15s,border-color .15s}button:hover{background:#edf2ff}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #a8c1ff;outline-offset:2px}
+button#saveNick,button#addEvent,button#addNotice,button#saveGoal,button#timerStart,button#timerSave,button#addMaterial{background:var(--blue);color:white;border-color:var(--blue)}button#restoreBackup,.entry button:not(.edit){color:#d33f4e;border-color:#f1c9ce}
+.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}.muted,small,.status{color:var(--muted);font-size:13px}.entry{border-top:1px solid var(--line);padding:13px 0}.entry small{display:block}
 #view-home{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:20px}
-#view-home>section{grid-column:span 4}
-#view-home>section:first-child{grid-column:1/-1}
-#view-home>section:nth-child(2){grid-column:span 4}
-#view-home>section:nth-child(3){grid-column:span 4}
-#view-home>section:nth-child(4){grid-column:span 4}
-#view-home>section:nth-child(5){grid-column:span 6}
-#view-home>section:nth-child(6){grid-column:span 6}
-#view-home>section:nth-child(7){grid-column:span 6}
-#view-home>section:nth-child(8){grid-column:span 6}
-#view-home>section:nth-child(9){grid-column:1/-1}
-#view-home:before{content:"안녕하세요! 오늘도 함께 성장해요";grid-column:1/-1;display:block;background:linear-gradient(110deg,#fff 0%,#f5f8ff 60%,#e7f1ff 100%);border:1px solid var(--line);border-radius:18px;padding:24px 28px;font-size:24px;font-weight:800;box-shadow:0 4px 20px rgba(40,60,120,.06)}
-#view-home section{min-width:0}
-#view-home section h2{color:#253550}
-#view-home section:nth-child(2) #timerDisplay{padding:24px 0}
-#view-home section:nth-child(3) #goalStats{background:#f6f8ff;border-radius:12px;padding:12px}
-#view-home section:nth-child(4) #streakBoard{background:#fff8ef;border-radius:12px;padding:12px}
-@media(min-width:1200px){#view-home{grid-template-columns:repeat(12,minmax(0,1fr))}}
-@media(min-width:768px) and (max-width:1199px){main{padding-left:260px}#view-home{grid-template-columns:repeat(2,minmax(0,1fr))}#view-home>section,#view-home>section:first-child,#view-home>section:nth-child(n){grid-column:span 1}#view-home:before{grid-column:1/-1}}
-@media(max-width:767px){main{padding:0 14px 90px}header{height:auto;padding:13px 0}#mainNav{inset:auto 0 0;width:100%;height:70px;flex-direction:row;justify-content:space-around;padding:5px 3px;border:0;border-top:1px solid var(--line);gap:0}#mainNav:before{display:none}#mainNav a{flex:1;flex-direction:column;justify-content:center;gap:1px;padding:3px;font-size:11px;min-height:58px}#mainNav a:last-child{margin-top:0}.tab-view{margin-top:14px}.panel{padding:19px;margin-bottom:16px}.form-grid{grid-template-columns:1fr}#view-home{display:flex;flex-direction:column;gap:14px}#view-home:before{order:0;font-size:20px;padding:20px}#view-home>section:nth-child(2){order:1}}
+#view-home .panel{margin:0;min-width:0}#homeGreeting{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;min-height:130px;background:linear-gradient(110deg,#fff,#f0f5ff);position:relative;overflow:hidden}
+#homeGreeting .greetText{font-size:24px;font-weight:800}#homeGreeting .greetSub{font-size:15px;color:var(--muted)}#homeGreeting svg{width:240px;height:110px}
+#homeTimer{grid-column:span 4;text-align:center}#homeGoal{grid-column:span 4}#homeStreak{grid-column:span 4}#homeHeat{grid-column:span 6}#homeQuest{grid-column:span 6}#homeEvents{grid-column:span 6}#homeNotices{grid-column:span 6}
+.cardHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}.cardHead h2{margin:0}.cardHead a{font-size:13px;color:var(--blue);text-decoration:none;white-space:nowrap}
+#timerDisplay{font-size:48px!important;font-weight:800!important;color:var(--blue);font-variant-numeric:tabular-nums;padding:18px 0!important}
+#homeTimer #studySubject{max-width:260px;margin:0 auto 8px}#homeTimer .row{justify-content:center}#homeTimer .row button{width:auto}
+@media(min-width:768px) and (max-width:1199px){main{padding-left:264px}#view-home{grid-template-columns:repeat(2,minmax(0,1fr))}#homeGreeting{grid-column:1/-1}#homeTimer,#homeGoal,#homeStreak,#homeHeat,#homeQuest,#homeEvents,#homeNotices{grid-column:span 1}}
+@media(max-width:767px){main{padding:0 13px 90px}header{height:58px}.user-chip{font-size:13px}#mainNav{inset:auto 0 0;width:100%;height:70px;flex-direction:row;justify-content:space-around;padding:4px;border:0;border-top:1px solid var(--line);gap:0}#mainNav .brand,#mainNav .sidebarNote{display:none}#mainNav a{flex:1;flex-direction:column;justify-content:center;gap:0;padding:3px;font-size:11px;min-height:58px}#mainNav a span{font-size:17px}#view-home{display:flex;flex-direction:column;gap:14px}#homeGreeting{order:0}#homeTimer{order:1}#homeGoal{order:2}#homeStreak{order:3}#homeHeat{order:4}#homeQuest{order:5}#homeEvents{order:6}#homeNotices{order:7}.panel{padding:18px;margin:0}}
 </style>
 
 
 
+
 </head><body><main>
-<header><h1>Study Archive</h1><p class="muted">공유 일정 · 공지사항 · 공부 기록</p><div id="status" class="status">Supabase 연결 중…</div></header><nav id="mainNav"><a href="#home" data-tab="home"><span aria-hidden="true">⌂</span><span>홈</span></a><a href="#study" data-tab="study"><span aria-hidden="true">◷</span><span>학습 기록</span></a><a href="#calendar" data-tab="calendar"><span aria-hidden="true">▦</span><span>캘린더·일정</span></a><a href="#materials" data-tab="materials"><span aria-hidden="true">▱</span><span>자료 저장소</span></a><a href="#notices" data-tab="notices"><span aria-hidden="true">♧</span><span>공지사항</span></a><a href="#settings" data-tab="settings"><span aria-hidden="true">⚙</span><span>설정</span></a></nav>
+<header><h1 id="pageTitle">홈</h1><div class="user-chip"><span id="userAvatar">?</span><span id="userNick">사용자</span><span id="connectionDot" title="연결됨" aria-label="Supabase 연결 상태"></span></div><div id="status" class="status" aria-live="polite">Supabase 연결 중…</div></header><nav id="mainNav"><div class="brand"><span class="brandIcon" aria-hidden="true">▱</span><div><strong>함께하는 학습 아카이브</strong><span>기록이 모여, 더 큰 성장을</span></div></div><a href="#home" data-tab="home"><span>⌂</span>홈</a><a href="#records" data-tab="records"><span>◷</span>학습 기록</a><a href="#calendar" data-tab="calendar"><span>▦</span>캘린더·일정</a><a href="#materials" data-tab="materials"><span>▱</span>자료 저장소</a><a href="#notices" data-tab="notices"><span>♧</span>공지사항</a><a href="#settings" data-tab="settings"><span>⚙</span>설정</a><div class="sidebarNote">오늘도 조금 더 성장하는 우리를 응원해요!</div></nav>
 <section class="panel" id="settingsPanel"><h2>닉네임</h2><div class="row"><input id="nickname" maxlength="24" placeholder="닉네임 입력"><button id="saveNick" style="max-width:130px">저장</button></div><small>닉네임은 표시용입니다. 익명 세션은 이 브라우저에 저장됩니다.</small></section>
 <section class="panel" id="eventsPanel"><h2>공유 일정</h2><input id="eventTitle" maxlength="120" placeholder="일정 제목"><div class="row"><input id="eventDate" type="date"><input id="eventTime" type="time"></div><textarea id="eventDetails" maxlength="1000" placeholder="내용, 장소, 준비물 등"></textarea><button id="addEvent">일정 추가</button><div id="events" class="status">불러오는 중…</div></section>
 <section class="panel"><h2>공지사항</h2><input id="noticeTitle" maxlength="120" placeholder="공지 제목"><textarea id="noticeBody" maxlength="3000" placeholder="공지 내용"></textarea><button id="addNotice">공지 등록</button><div id="notices" class="status">불러오는 중…</div></section>
@@ -266,52 +251,55 @@ document.getElementById("addMaterial").addEventListener("click",()=>{
 document.getElementById("materialSearch").addEventListener("input",renderMaterials);
 renderMaterials();
 </script>
+
+
 <script>
 (function(){
- const nav=document.getElementById('mainNav'); if(!nav)return;
- const sections=[...document.querySelectorAll('main>section.panel')];
- const groups={home:[],study:[],calendar:[],materials:[],notices:[],settings:[]};
- sections.forEach((sec,i)=>{
-   const id=sec.id||'';
-   if(id==='materialsPanel')groups.materials.push(sec);
-   else if(id==='eventsPanel')groups.calendar.push(sec);
-   else if(id==='settingsPanel')groups.settings.push(sec);
-   else {const h=sec.querySelector('h2')?.textContent||'';
-    if(h.includes('공지'))groups.notices.push(sec);
-    else if(h.includes('목표')||h.includes('타이머')||h.includes('연속')||h.includes('월간')||h.includes('과목별')||h.includes('내 공부'))groups.study.push(sec);
-    else groups.home.push(sec);
-   }
- });
- // Split the combined settings section into heading-led blocks while retaining all original nodes and IDs.
- const combined=document.getElementById('settingsPanel');
- if(combined){
-   const children=[...combined.children], blocks=[];let cur=[];
-   children.forEach(node=>{if(node.tagName==='H2'&&cur.length){blocks.push(cur);cur=[node]}else cur.push(node)});if(cur.length)blocks.push(cur);
-   blocks.forEach((block,idx)=>{
-    const title=block.find(n=>n.tagName==='H2')?.textContent||'';
-    const view=title.includes('타이머')||title.includes('퀘스트')||title.includes('연속')||title.includes('과목별')||title.includes('공부 기록')? 'study':
-      title.includes('리포트')||title.includes('백업')?'settings':
-      title.includes('목표')?'home':'settings';
-    if(idx===0){groups.settings.push(combined);return}
-    const wrapper=document.createElement('section');wrapper.className='panel';wrapper.dataset.legacyBlock='1';
-    block.forEach(n=>wrapper.appendChild(n));groups[view].push(wrapper);
-   });
- }
- Object.keys(groups).forEach(key=>{
-   const view=document.createElement('div');view.className='tab-view';view.id='view-'+key;view.dataset.view=key;
-   groups[key].forEach(sec=>{sec.dataset.originalSection='1';view.appendChild(sec)});
-   document.querySelector('main').appendChild(view);
- });
- function show(key,update=true){
-   if(!groups[key])key='home';
-   document.querySelectorAll('.tab-view').forEach(v=>v.classList.toggle('active',v.dataset.view===key));
-   nav.querySelectorAll('a').forEach(a=>a.classList.toggle('active',a.dataset.tab===key));
-   if(update&&location.hash!=='#'+key)history.replaceState(null,'','#'+key);
-   window.scrollTo({top:0,behavior:'auto'});
- }
- nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();show(a.dataset.tab)}));
- window.addEventListener('hashchange',()=>show(location.hash.slice(1),false));
- show(location.hash.slice(1)||'home',false);
+const main=document.querySelector('main'),nav=document.getElementById('mainNav');
+const originals=[...main.querySelectorAll(':scope>section.panel')];
+const viewMap={home:[],records:[],calendar:[],materials:[],notices:[],settings:[]};
+const view=document.createElement('div');view.className='tab-view';view.id='view-home';view.dataset.view='home';
+view.innerHTML=`<section class="panel" id="homeGreeting"><div><div class="greetText">안녕하세요, <span id="greetNick">학습자</span>님!</div><div class="greetSub">오늘도 꾸준히 성장하는 하루를 만들어봐요.</div></div><div><div id="todayLabel"></div><svg viewBox="0 0 240 110" role="img" aria-label="산과 나무 일러스트"><path d="M0 100L58 38 100 80 151 18 240 96V110H0Z" fill="#dce9f8"/><path d="M40 105L91 52 133 105Z" fill="#c7dced"/><path d="M160 105L198 44 238 105Z" fill="#d2e7d8"/><g fill="#8eb9a4"><circle cx="28" cy="78" r="13"/><circle cx="213" cy="76" r="15"/><circle cx="185" cy="88" r="12"/></g><g stroke="#8b9d88" stroke-width="4"><path d="M28 78v25M213 76v27M185 88v15"/></g></svg></div></section>
+<section class="panel" id="homeTimer"><div class="cardHead"><h2>공부 타이머</h2><a href="#records" data-go="records">전체 보기 ›</a></div></section>
+<section class="panel" id="homeGoal"><div class="cardHead"><h2>오늘의 목표</h2><a href="#settings" data-go="settings">목표 변경 ›</a></div><div id="homeGoalData">목표 통계를 불러오는 중…</div></section>
+<section class="panel" id="homeStreak"><div class="cardHead"><h2>연속 공부</h2><a href="#records" data-go="records">전체 보기 ›</a></div><div id="homeStreakData">연속 기록 계산 중…</div></section>
+<section class="panel" id="homeHeat"><div class="cardHead"><h2>최근 28일 공부 기록</h2><a href="#calendar" data-go="calendar">전체 보기 ›</a></div><div id="homeHeatData"></div></section>
+<section class="panel" id="homeQuest"><div class="cardHead"><h2>오늘의 퀘스트</h2><a href="#records" data-go="records">전체 보기 ›</a></div><div id="homeQuestData"></div></section>
+<section class="panel" id="homeEvents"><div class="cardHead"><h2>다가오는 일정</h2><a href="#calendar" data-go="calendar">전체 보기 ›</a></div><div id="homeEventsData"></div></section>
+<section class="panel" id="homeNotices"><div class="cardHead"><h2>최근 공지사항</h2><a href="#notices" data-go="notices">전체 보기 ›</a></div><div id="homeNoticesData"></div></section>`;
+main.appendChild(view);
+function createView(key){let v=document.createElement('div');v.className='tab-view';v.id='view-'+key;v.dataset.view=key;main.appendChild(v);return v}
+const views={home:view,records:createView('records'),calendar:createView('calendar'),materials:createView('materials'),notices:createView('notices'),settings:createView('settings')};
+originals.forEach(sec=>{
+ if(sec.id==='materialsPanel')views.materials.appendChild(sec);
+ else if(sec.id==='eventsPanel')views.calendar.appendChild(sec);
+ else if(sec.id==='settingsPanel')views.settings.appendChild(sec);
+ else if(sec.querySelector('#noticeTitle')||sec.querySelector('#notices'))views.notices.appendChild(sec);
+ else views.records.appendChild(sec);
+});
+const settings=views.settings.querySelector('#settingsPanel');
+if(settings){const backupHead=[...settings.querySelectorAll('h2')].find(h=>h.textContent.includes('백업'));if(backupHead){let n=backupHead;while(n&&n!==settings){const next=n.nextSibling;if(n!==backupHead&&n.nodeType===1&&n.tagName==='H2')break; n=next}}}
+function tab(key,update){if(!views[key])key='home';Object.values(views).forEach(v=>v.classList.toggle('active',v.dataset.view===key));nav.querySelectorAll('a[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===key));document.getElementById('pageTitle').textContent=({home:'홈',records:'학습 기록',calendar:'캘린더·일정',materials:'자료 저장소',notices:'공지사항',settings:'설정'})[key];if(update&&location.hash!=='#'+key)history.replaceState(null,'','#'+key);window.scrollTo(0,0)}
+nav.querySelectorAll('a[data-tab]').forEach(a=>{a.dataset.tab=a.dataset.tab==='study'?'records':a.dataset.tab;a.href='#'+a.dataset.tab;a.addEventListener('click',e=>{e.preventDefault();tab(a.dataset.tab,true)})});
+document.addEventListener('click',e=>{const a=e.target.closest('[data-go]');if(a){e.preventDefault();tab(a.dataset.go,true)}});
+window.addEventListener('hashchange',()=>tab(location.hash.slice(1),false));tab(location.hash.slice(1)||'home',false);
+function move(id,target){const el=document.getElementById(id);if(el&&target)target.appendChild(el)}
+// Move original timer controls into the dashboard timer card, keeping all IDs and handlers.
+['studySubject','timerDisplay','timerStart','timerPause','timerReset','timerSave','timerStatus'].forEach(id=>move(id,document.getElementById('homeTimer')));
+const timer=document.getElementById('homeTimer');if(timer){const subject=timer.querySelector('#studySubject');if(subject)subject.placeholder='과목 / 공부 내용';}
+move('goalStats',document.getElementById('homeGoalData'));move('streakBoard',document.getElementById('homeStreakData'));move('questBoard',document.getElementById('homeQuestData'));
+const nickname=document.getElementById('nickname'),greet=document.getElementById('greetNick'),chip=document.getElementById('userNick'),avatar=document.getElementById('userAvatar');
+function updateNick(){const n=(nickname&&nickname.value.trim())||'학습자';greet.textContent=n;chip.textContent=n;avatar.textContent=n.slice(0,1)}
+updateNick();nickname?.addEventListener('input',updateNick);document.getElementById('saveNick')?.addEventListener('click',()=>setTimeout(updateNick,50));
+try{document.getElementById('todayLabel').textContent=new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(new Date())}catch(e){}
+const status=document.getElementById('status'),dot=document.getElementById('connectionDot');if(status&&dot){const observer=new MutationObserver(()=>{const ok=/연결됨|connected|success/i.test(status.textContent);dot.style.background=ok?'#22a06b':'#dc3545';dot.title=ok?'연결됨':'연결 끊김'});observer.observe(status,{childList:true,subtree:true,characterData:true})}
+function safe(fn){try{return fn()}catch(e){return null}}
+safe(()=>{const el=document.getElementById('homeEventsData');const source=document.getElementById('events');if(el&&source){el.innerHTML=source.innerHTML||'<p>일정이 없습니다.</p>'}});
+safe(()=>{const el=document.getElementById('homeNoticesData'),source=document.getElementById('notices');if(el&&source)el.innerHTML=source.innerHTML||'<p>공지사항이 없습니다.</p>'}});
+safe(()=>{const el=document.getElementById('homeGoalData');if(el&&!el.textContent.trim())el.textContent='오늘 목표와 공부 시간을 확인하세요.'});
+safe(()=>{const el=document.getElementById('homeStreakData');if(el&&!el.textContent.trim())el.textContent='공부 기록이 쌓이면 연속 기록이 표시됩니다.'});
+safe(()=>{const el=document.getElementById('homeQuestData');if(el&&!el.textContent.trim())el.textContent='퀘스트가 없습니다.'});
+safe(()=>{const el=document.getElementById('homeHeatData');if(el){let html='<div class="heatmap" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">';for(let i=0;i<28;i++)html+='<span style="aspect-ratio:1;background:#eef1f6;border-radius:5px"></span>';el.innerHTML=html+'</div><small>적음 ▢ ▢ ▢ ▢ 많음</small>'}});
 })();
 </script>
 </body></html>
